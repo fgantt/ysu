@@ -9,6 +9,14 @@ The engine binary should be:
 - Referenced in the Tauri configuration
 - Bundled with the application or downloaded on first run
 
+## Configuration Storage
+
+Engine configurations (including the built-in engine location) are stored in:
+- **macOS/Linux**: `~/.config/shogi-vibe/engines.json`
+- **Windows**: `%APPDATA%\shogi-vibe\engines.json`
+
+For complete details on where all configuration is stored (engines, UI settings, wallpapers, etc.), see the [Configuration Storage Guide](user/guides/CONFIGURATION_STORAGE.md).
+
 ## Development
 
 For local development, you can:
