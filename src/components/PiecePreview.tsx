@@ -1,0 +1,163 @@
+import React, { useState, useEffect } from 'react';
+import { PieceType } from 'tsshogi';
+import { getSvgPathForPiece, isSvgTheme } from '../utils/pieceThemes';
+import { KANJI_MAP, ENGLISH_MAP } from '../utils/pieceMaps';
+import { getThemeById, ThemeConfig } from '../utils/themeConfig';
+import SvgPiece from './SvgPiece';
+
+interface PiecePreviewProps {
+  theme: string;
+}
+
+const PiecePreview: React.FC<PiecePreviewProps> = ({ theme }) => {
+  const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null);
+
+  // Define piece pairs: [base piece, promoted piece]
+  const piecePairs: Array<[PieceType, PieceType]> = [
+    ['pawn', 'promPawn'],
+    ['lance', 'promLance'],
+    ['knight', 'promKnight'],
+    ['silver', 'promSilver'],
+    ['gold', 'gold'], // Gold doesn't promote
+    ['bishop', 'horse'],
+    ['rook', 'dragon'],
+    ['king', 'king'], // King doesn't promote
+  ];
+
+  useEffect(() => {
+    const loadThemeConfig = async () => {
+      const config = await getThemeById(theme);
+      setThemeConfig(config || null);
+    };
+    loadThemeConfig();
+  }, [theme]);
+
+  const renderSvgPiece = (pieceType: PieceType) => {
+    const svgPath = getSvgPathForPiece(pieceType, 'player1', theme);
+    return (
+      <img
+        src={svgPath}
+        alt={`${pieceType} piece`}
+        style={{ width: '64px', height: '64px' }}
+        onError={(e) => {
+          console.warn(`Failed to load piece image: ${svgPath}`);
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+    );
+  };
+
+  const renderSvgPieceWhite = (pieceType: PieceType) => {
+    const svgPath = getSvgPathForPiece(pieceType, 'player2', theme);
+    return (
+      <img
+        src={svgPath}
+        alt={`${pieceType} piece (white)`}
+        style={{ width: '64px', height: '64px' }}
+        onError={(e) => {
+          console.warn(`Failed to load piece image: ${svgPath}`);
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+    );
+  };
+
+  const renderTextPiece = (pieceType: PieceType, isKanji: boolean) => {
+    return (
+      <div style={{ width: '56px', height: '56px' }}>
+        <SvgPiece
+          type={pieceType}
+          player="player1"
+          pieceThemeType={theme}
+        />
+      </div>
+    );
+  };
+
+  const isSvg = isSvgTheme(theme);
+  const isKanji = theme === 'kanji';
+
+  return (
+    <div style={{ marginTop: '16px' }}>
+      <h4 style={{ marginBottom: '12px', fontSize: '14px', color: '#666' }}>
+        Piece Preview
+      </h4>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {piecePairs.map(([basePiece, promotedPiece]) => (
+          <div key={basePiece} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {isSvg ? (
+                renderSvgPiece(basePiece)
+              ) : (
+                renderTextPiece(basePiece, isKanji)
+              )}
+              {basePiece !== promotedPiece && (
+                <>
+                  <span style={{ fontSize: '12px', color: '#999' }}>→</span>
+                  {isSvg ? (
+                    renderSvgPiece(promotedPiece)
+                  ) : (
+                    renderTextPiece(promotedPiece, isKanji)
+                  )}
+                </>
+              )}
+              {/* For SVG themes, show both black and white kings */}
+              {isSvg && basePiece === 'king' && (
+                <>
+                  <span style={{ fontSize: '12px', color: '#999' }}>|</span>
+                  {renderSvgPieceWhite(basePiece)}
+                </>
+              )}
+            </div>
+            <div style={{ fontSize: '8px', color: '#999', textAlign: 'center' }}>
+              {basePiece === 'pawn' && 'Pawn'}
+              {basePiece === 'lance' && 'Lance'}
+              {basePiece === 'knight' && 'Knight'}
+              {basePiece === 'silver' && 'Silver'}
+              {basePiece === 'gold' && 'Gold'}
+              {basePiece === 'bishop' && 'Bishop'}
+              {basePiece === 'rook' && 'Rook'}
+              {basePiece === 'king' && 'King'}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Theme description and attribution */}
+      {themeConfig && (
+        <div style={{ marginTop: '16px', fontSize: '14px', color: '#000', lineHeight: '1.5' }}>
+          {themeConfig.description && (
+            <div style={{ marginBottom: '10px', color: '#000', fontWeight: '500' }}>
+              {themeConfig.description}
+            </div>
+          )}
+          {themeConfig.attribution && (
+            <div style={{ fontStyle: 'italic', color: '#000' }}>
+              Piece designs by{' '}
+              <a 
+                href={themeConfig.attribution.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#0066cc', textDecoration: 'underline', fontWeight: '600' }}
+              >
+                {themeConfig.attribution.name}
+              </a>
+              , licensed under{' '}
+              <a 
+                href={themeConfig.attribution.licenseUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#0066cc', textDecoration: 'underline', fontWeight: '600' }}
+              >
+                {themeConfig.attribution.license}
+              </a>
+              .
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PiecePreview;

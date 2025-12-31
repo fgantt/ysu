@@ -1,0 +1,102 @@
+.engine-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.engine-selector label {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  min-width: 100px;
+}
+
+.engine-select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-input-border);
+  border-radius: 4px;
+  font-size: 14px;
+  background: var(--color-select-bg);
+  color: var(--color-select-text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.engine-select:hover {
+  border-color: var(--color-border-dark);
+}
+
+.engine-select:focus {
+  outline: none;
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+.refresh-button {
+  padding: 8px 12px;
+  background: var(--color-button-secondary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-button-secondary-text);
+  font-size: 16px;
+  transition: all 0.2s;
+  min-width: 40px;
+}
+
+.refresh-button:hover {
+  background: var(--color-button-secondary-hover);
+  border-color: var(--color-border-dark);
+  transform: rotate(180deg);
+}
+
+.engine-selector-loading,
+.engine-selector-error,
+.engine-selector-empty {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.engine-selector-loading {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.engine-selector-error {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.engine-selector-empty {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.engine-selector-empty a {
+  color: var(--color-warning-text);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.retry-button {
+  padding: 4px 12px;
+  background: var(--color-button-secondary);
+  border: 1px solid var(--color-button-danger);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-button-danger);
+  transition: all 0.2s;
+}
+
+.retry-button:hover {
+  background: var(--color-button-danger);
+  color: var(--color-button-danger-text);
+}
+

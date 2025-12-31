@@ -1,0 +1,619 @@
+.shogi-board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.diagram-grid {
+  display: grid;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.diagram-grid-centered {
+  top: 50%;
+  left: 50%;
+}
+
+.board-and-row-numbers {
+  display: flex;
+}
+
+.column-numbers {
+  display: flex;
+  justify-content: space-around;
+  width: 635px; /* Match board width */
+  color: #eee;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+.column-number-cell {
+  width: 70px; /* Match square width */
+  text-align: center;
+  background-color: rgba(0, 0, 139, 0.75);
+}
+
+.row-numbers {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 688px; /* Match board height */
+  color: #eee;
+  font-weight: bold;
+}
+
+.row-number-cell {
+  height: 76px; /* Match square height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 139, 0.75);
+  padding: 0 3px;
+}
+
+.check-line-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* Make sure it doesn't interfere with clicks */
+  z-index: 1; /* Place it above the board but below the pieces */
+}
+
+.thinking-arrow-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* Make sure it doesn't interfere with clicks */
+  z-index: 2; /* Place it above the check line but below the pieces */
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 70px);
+  grid-template-rows: repeat(9, 76px);
+  border: 2px solid #333;
+  width: 630px;
+  height: 684px;
+  background-color: #8B4513; /* Darker wood brown - fallback when no image is set */
+  background-image: linear-gradient(90deg, #8B4513 0%, #A0522D 20%, #8B4513 40%, #A0522D 60%, #8B4513 80%, #A0522D 100%);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  position: relative; /* Add this to position the SVG correctly */
+}
+
+.board-row {
+    display: contents;
+}
+
+.board-square {
+  width: 70px;
+  height: 76px;
+  border: 1px solid #222; /* Darker border for grid lines */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative; /* Needed for absolute positioning of overlay */
+}
+
+.board-square.legal-move {
+  background-color: rgba(0, 255, 0, 0.3); /* Light green highlight for legal moves */
+  cursor: pointer;
+}
+
+.board-square.legal-move:hover {
+  background-color: rgba(0, 255, 0, 0.5); /* Darker green on hover */
+}
+
+/* Board square selection is handled by the piece inside, not the square itself */
+
+.intersection-dot {
+  position: absolute;
+  bottom: -5px; /* Half of the dot's height to center it on the border */
+  right: -5px; /* Half of the dot's width to center it on the border */
+  width: 10px;
+  height: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  z-index: 2; /* Ensure it's above the board squares */
+}
+
+.piece {
+  /* Remove old styling */
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  cursor: grab;
+  width: 70px; /* Match SVG width */
+  height: 76px; /* Match SVG height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative; /* Added for badge positioning */
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out; /* Smooth transition for hover/active states */
+}
+
+.piece.selected {
+  transform: translateY(-8px) scale(1.08); /* Lift more and slightly enlarge */
+  z-index: 10; /* Ensure it's above other pieces */
+  transition: transform 0.2s ease-out; /* Smooth transition for selection */
+}
+
+.piece svg {
+  overflow: visible; /* Allow content to overflow if needed */
+}
+
+.badge-counter {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.badge-counter-gote {
+  transform: rotate(180deg);
+  bottom: auto;
+  top: 2px;
+  right: auto;
+  left: 2px;
+}
+
+.badge-attacked {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2em;
+}
+
+.badge-attacked-player1 {
+  background-color: red;
+}
+
+.badge-attacked-player2 {
+  background-color: green;
+}
+
+.badge-attacked-gote {
+  transform: rotate(180deg);
+  top: auto;
+  bottom: 2px;
+  right: auto;
+  left: 2px;
+}
+
+.piece-tooltip {
+  position: absolute;
+  top: -30px; /* Adjust as needed to position above the piece */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  z-index: 20; /* Ensure it's above other elements */
+  pointer-events: none; /* Allow clicks to pass through to the piece */
+}
+
+.player1 {
+  /* Player 1 pieces are handled by SvgPiece fill color */
+  color: #000; /* Keep for text if any, but SVG handles fill */
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Removed old layout styles - now handled in GamePage.css */
+
+.captured-pieces {
+  display: flex;
+  flex-direction: row; /* Arrange items in a row */
+  align-items: flex-start; /* Align items to the top */
+  justify-content: space-between; /* Distribute space between items */
+  border: 3px solid #000;
+  padding: 0;
+  width: 630px; /* Match board width */
+  min-height: 80px; /* Adjust height for horizontal layout */
+  color: #000;
+}
+
+.captured-pieces h3 {
+  color: #000;
+  margin: 0; /* Remove default margins */
+  white-space: nowrap; /* Prevent wrapping */
+  background-color: #3D8B3D; /* Green background for the banner effect */
+  padding: 5px 10px; /* Add some padding for better appearance */
+  display: inline-block;
+  position: relative;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 20px 100%);
+}
+
+.captured-pieces.player1 h3 {
+  order: 2; /* Place heading after pieces-list */
+  padding-left: 2rem;
+}
+
+.captured-pieces.player2 h3 {
+  order: 1; /* Place heading before pieces-list */
+  padding-right: 2rem;
+  clip-path: polygon(0% 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+}
+
+.captured-piece-highlighted {
+  animation: capturedPiecePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes capturedPiecePulse {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.3);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.captured-piece-highlighted .piece {
+  transition: transform 0.2s ease-out;
+}
+
+/* Captured pieces layout */
+.pieces-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 5px;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+}
+
+.captured-pieces.player1 .pieces-list {
+  order: 1;
+}
+
+.captured-pieces.player2 .pieces-list {
+  order: 2;
+}
+
+
+
+
+.legal-move {
+  background-color: rgba(170, 255, 170, 0.5); /* Light green with 50% transparency */
+}
+
+.in-check {
+  background-color: rgba(255, 0, 0, 0.5); /* Red with 50% transparency */
+}
+
+.last-move {
+  background-color: rgba(255, 255, 170, 0.5); /* Light yellow with 50% transparency */
+}
+
+.move-log {
+  margin-top: 0;
+  padding: 0;
+  width: 250px; /* Adjusted width */
+  height: 684px; /* Match board height */
+  background-color: #F5DEB3; /* Wheat - light, slightly worn paper */
+  color: #000;
+  box-sizing: border-box;
+}
+
+.move-log h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #000;
+  text-align: center;
+}
+
+.move-table-container {
+  max-height: 624px; /* Set a max height for the scrollable area */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.move-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #000;
+  table-layout: fixed;
+}
+
+.move-table thead {
+  display: table;
+  width: 100%;
+}
+
+.move-table tbody {
+  display: block;
+  max-height: 624px; /* Set a fixed height for scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
+  width: 100%;
+}
+
+.move-table tr {
+  display: table;
+  width: 100%;
+}
+
+
+.move-table th,
+.move-table td {
+  border: 1px solid #000;
+  padding: 0;
+  text-align: center;
+  white-space: nowrap; /* Prevent headers and cells from wrapping */
+}
+
+.move-table th:nth-child(1) { width: 20%; } /* Move Number */
+.move-table th:nth-child(2) { width: 40%; text-align: center; } /* Player 1 Move */
+.move-table th:nth-child(3) { width: 40%; text-align: center; } /* Player 2 Move */
+
+.move-table td:nth-child(1) { width: 20%; text-align: right; padding-right: .3rem; } /* Move Number */
+.move-table td:nth-child(2) { width: 40%; text-align: left; padding-left: .3rem; } /* Player 1 Move */
+.move-table td:nth-child(3) { width: 40%; text-align: left; padding-left: .3rem; } /* Player 2 Move */
+
+.move-table th {
+  background-color: #C8C8A0; /* Slightly darker, aged paper */
+  font-weight: bold;
+}
+
+.move-table tbody tr:nth-child(odd) {
+  background-color: #F8F8E0; /* Lighter, slightly yellowed paper */
+}
+
+.move-table tbody tr:nth-child(even) {
+  background-color: #E0D8B0; /* Slightly darker, aged paper */
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.promotion-modal {
+  background-color: var(--color-bg-panel);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(51, 51, 51, 0.75);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.game-controls-left,
+.game-controls-right {
+  display: flex;
+  gap: 10px;
+}
+
+.game-controls button {
+  background-color: #00008B;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.game-controls button:hover {
+  background-color: #0000CD;
+}
+
+.game-controls button.active {
+  background-color: #4A90E2;
+  box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}
+
+.game-controls button.active:hover {
+  background-color: #357ABD;
+}
+
+.difficulty-display {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.checkmate-modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.checkmate-modal-buttons button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+  color: white;
+}
+
+.checkmate-modal-buttons button:first-child {
+  background-color: #00008B; /* Dark Blue */
+}
+
+.checkmate-modal-buttons button:first-child:hover {
+  background-color: #0000CD; /* Darker Blue */
+}
+
+.checkmate-modal-buttons button:last-child {
+  background-color: #6c757d; /* Gray */
+}
+
+.checkmate-modal-buttons button:last-child:hover {
+  background-color: #5a6268; /* Darker Gray */
+}
+
+.promotion-options {
+  display: flex;
+  justify-content: center;
+  gap: 0px;
+  margin-top: 0px;
+}
+
+.promotion-option {
+  cursor: pointer;
+  padding: 0px;
+  border: 2px solid transparent;
+  border-radius: 0px;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.promotion-option:hover {
+  border-color: #00008B; /* Dark Blue on hover */
+  background-color: rgba(0, 0, 139, 0.1); /* Light blue tint */
+  transform: translateY(-2px);
+}
+
+/* Game Over State */
+.shogi-board-container.game-over {
+  position: relative;
+}
+
+.shogi-board-container.game-over::after {
+  content: "GAME OVER";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px 40px;
+  border-radius: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.shogi-board-container.game-over .board {
+  opacity: 0.7;
+  filter: grayscale(30%);
+}
+
+.shogi-board-container.game-over .board-square {
+  cursor: not-allowed;
+}
+
+.shogi-board-container.game-over .piece {
+  cursor: not-allowed;
+}
+
+/* Game over overlay for entire game area */
+.game-page.game-over::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Game controls game over state */
+.game-page.game-over .game-controls {
+  opacity: 0.8;
+}
+
+.game-page.game-over .game-controls button:not(.new-game-btn) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.game-page.game-over .game-controls button.new-game-btn {
+  background-color: #28a745;
+  border-color: #28a745;
+  font-weight: bold;
+}
+
+/* Disabled button styling */
+.game-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.game-controls button:disabled:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* Game over note styling */
+.game-over-note {
+  font-style: italic;
+  color: #666;
+  margin: 10px 0;
+  text-align: center;
+}
+
+/* Captured pieces game over state */
+.shogi-board-container.game-over ~ .captured-pieces,
+.shogi-board-container.game-over + .captured-pieces {
+  opacity: 0.7;
+  filter: grayscale(30%);
+}
+
+.shogi-board-container.game-over ~ .captured-pieces .piece,
+.shogi-board-container.game-over + .captured-pieces .piece {
+  cursor: not-allowed;
+}

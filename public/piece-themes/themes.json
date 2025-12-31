@@ -1,0 +1,169 @@
+{
+  "themes": [
+    {
+      "id": "13xforever-1-kanji",
+      "displayName": "13xforever 1",
+      "description": "Classic 1 kanji pieces with traditional styling",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "13xforever-2-kanji",
+      "displayName": "13xforever 2",
+      "description": "Classic 2 kanji pieces with traditional styling",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "2-kanji_red_wood",
+      "displayName": "2 Kanji Red Wood",
+      "description": "Red wood pieces with kanji characters",
+      "attribution": {
+        "name": "Kadagaden",
+        "url": "https://github.com/Kadagaden/shogi-pieces",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/legalcode"
+      }
+    },
+    {
+      "id": "doubutsu",
+      "displayName": "Doubutsu",
+      "description": "Animal-themed pieces for a playful experience",
+      "attribution": {
+        "name": "Kadagaden",
+        "url": "https://github.com/Kadagaden/shogi-pieces",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/legalcode"
+      }
+    },
+    {
+      "id": "Hari-Seldon-1-kanji",
+      "displayName": "Hari-Seldon 1",
+      "description": "Elegant 1 kanji pieces with refined design",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "Hari-Seldon-2-kanji",
+      "displayName": "Hari-Seldon 2",
+      "description": "Elegant 2 kanji pieces with refined design",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "international",
+      "displayName": "International",
+      "description": "International-style piece designs",
+      "attribution": {
+        "name": "Kadagaden",
+        "url": "https://github.com/Kadagaden/shogi-pieces",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/legalcode"
+      }
+    },
+    {
+      "id": "kanji_light_3D_OTB",
+      "displayName": "Kanji Light 3D OTB",
+      "description": "Light 3D over-the-board style with kanji",
+      "attribution": {
+        "name": "Kadagaden",
+        "url": "https://github.com/Kadagaden/shogi-pieces",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/legalcode"
+      }
+    },
+    {
+      "id": "kanji_red_wood",
+      "displayName": "Kanji Red Wood",
+      "description": "Red wood pieces with kanji characters",
+      "attribution": {
+        "name": "Kadagaden",
+        "url": "https://github.com/Kadagaden/shogi-pieces",
+        "license": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/legalcode"
+      }
+    },
+    {
+      "id": "Kinki-1-kanji",
+      "displayName": "Kinki 1",
+      "description": "Traditional Kinki-style kanji pieces",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "Kinki-2-kanji",
+      "displayName": "Kinki 2",
+      "description": "Alternative Kinki-style kanji pieces",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "Minase-1-kanji",
+      "displayName": "Minase 1",
+      "description": "Minase-style kanji pieces with distinctive design",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "Minase-2-kanji",
+      "displayName": "Minase 2",
+      "description": "Alternative Minase-style kanji pieces",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "Ryoko-1-kanji",
+      "displayName": "Ryoko 1",
+      "description": "Ryoko-style kanji pieces with unique character",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    },
+    {
+      "id": "Ryoko-2-kanji",
+      "displayName": "Ryoko 2",
+      "description": "Alternative Ryoko-style kanji pieces",
+      "attribution": {
+        "name": "LuffyKudo",
+        "url": "https://github.com/LuffyKudo/Shogi-Themes",
+        "license": "CC BY-SA 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"
+      }
+    }
+  ]
+}
