@@ -19,7 +19,7 @@ import StartGameModal from './StartGameModal';
 import Clock from './Clock';
 import { getAvailablePieceThemes, AVAILABLE_PIECE_THEMES } from '../utils/pieceThemes';
 import { GameSettings } from '../types';
-import { loadWallpaperImages, loadBoardImages, getFallbackWallpaperImages, getFallbackBoardImages } from '../utils/imageLoader';
+import { loadWallpaperImages, loadBoardImages } from '../utils/imageLoader';
 import { GameFormat, GameData, generateGame } from '../utils/gameFormats';
 import { playPieceMoveSound, playCheckmateSound, playDrawSound, setSoundsEnabled, setVolume, getVolume } from '../utils/audio';
 import { sendUsiCommand, parseBestMove, parseEngineInfo, sendIsReadyAndWait } from '../utils/tauriEngine';
@@ -607,9 +607,9 @@ const GamePage: React.FC<GamePageProps> = ({
           loadBoardImages()
         ]);
 
-        // If dynamic loading returns empty arrays, fall back to hardcoded lists
-        finalWallpaperPaths = wallpaperPaths.length > 0 ? wallpaperPaths : getFallbackWallpaperImages();
-        finalBoardPaths = boardPaths.length > 0 ? boardPaths : getFallbackBoardImages();
+        // Use dynamically loaded images (no fallbacks - users can add their own images)
+        finalWallpaperPaths = wallpaperPaths;
+        finalBoardPaths = boardPaths;
 
         setWallpaperList(finalWallpaperPaths);
         setBoardBackgroundList(finalBoardPaths);
@@ -617,10 +617,10 @@ const GamePage: React.FC<GamePageProps> = ({
         console.log('Loaded wallpapers:', finalWallpaperPaths.length, 'images');
         console.log('Loaded boards:', finalBoardPaths.length, 'images');
       } catch (error) {
-        console.error('Error loading images dynamically, using fallback lists:', error);
-        // Fall back to hardcoded lists if dynamic loading fails
-        finalWallpaperPaths = getFallbackWallpaperImages();
-        finalBoardPaths = getFallbackBoardImages();
+        console.error('Error loading images dynamically:', error);
+        // Use empty arrays - users can add their own images
+        finalWallpaperPaths = [];
+        finalBoardPaths = [];
         setWallpaperList(finalWallpaperPaths);
         setBoardBackgroundList(finalBoardPaths);
       }

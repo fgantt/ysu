@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import SettingsPanel from './SettingsPanel';
 import StartGameModal from './StartGameModal';
 import { GameSettings } from '../types';
-import { loadWallpaperImages, loadBoardImages, getFallbackWallpaperImages, getFallbackBoardImages } from '../utils/imageLoader';
+import { loadWallpaperImages, loadBoardImages } from '../utils/imageLoader';
 import { setSoundsEnabled, setVolume } from '../utils/audio';
 import './HomePage.css';
 
@@ -71,9 +71,9 @@ const HomePage: React.FC = () => {
           loadBoardImages()
         ]);
 
-        // If dynamic loading returns empty arrays, fall back to hardcoded lists
-        finalWallpaperPaths = wallpaperPaths.length > 0 ? wallpaperPaths : getFallbackWallpaperImages();
-        finalBoardPaths = boardPaths.length > 0 ? boardPaths : getFallbackBoardImages();
+        // Use dynamically loaded images (no fallbacks - users can add their own images)
+        finalWallpaperPaths = wallpaperPaths;
+        finalBoardPaths = boardPaths;
 
         setWallpaperList(finalWallpaperPaths);
         setBoardBackgroundList(finalBoardPaths);
@@ -81,10 +81,10 @@ const HomePage: React.FC = () => {
         console.log('Loaded wallpapers:', finalWallpaperPaths.length, 'images');
         console.log('Loaded boards:', finalBoardPaths.length, 'images');
       } catch (error) {
-        console.error('Error loading images dynamically, using fallback lists:', error);
-        // Fall back to hardcoded lists if dynamic loading fails
-        finalWallpaperPaths = getFallbackWallpaperImages();
-        finalBoardPaths = getFallbackBoardImages();
+        console.error('Error loading images dynamically:', error);
+        // Use empty arrays - users can add their own images
+        finalWallpaperPaths = [];
+        finalBoardPaths = [];
         setWallpaperList(finalWallpaperPaths);
         setBoardBackgroundList(finalBoardPaths);
       }
@@ -146,7 +146,7 @@ const HomePage: React.FC = () => {
     setIsSettingsOpen(false);
   };
 
-  const handleSelectWallpaper = (wallpaper) => {
+  const handleSelectWallpaper = (wallpaper: string) => {
     setCurrentWallpaper(wallpaper);
     document.body.style.backgroundImage = `url('${wallpaper}')`;
     document.body.style.backgroundSize = 'cover';
@@ -155,7 +155,7 @@ const HomePage: React.FC = () => {
     document.body.style.backgroundAttachment = 'fixed';
   };
 
-  const handleSelectBoardBackground = (boardBackground) => {
+  const handleSelectBoardBackground = (boardBackground: string) => {
     setCurrentBoardBackground(boardBackground);
   };
 

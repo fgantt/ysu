@@ -187,8 +187,20 @@ pub fn find_workspace_root() -> Option<std::path::PathBuf> {
         })?;
     
     // Walk up from current directory to find workspace root
+    // Look for either:
+    // 1. Cargo.toml with usi-engine binary definition (engine repo)
+    // 2. package.json with src-tauri directory (UI repo)
     let mut current = start_dir.as_path();
     loop {
+        // Check for package.json (UI repo root)
+        let package_json = current.join("package.json");
+        let src_tauri = current.join("src-tauri");
+        if package_json.exists() && src_tauri.exists() {
+            log::debug!("Found workspace root via package.json: {}", current.display());
+            return Some(current.to_path_buf());
+        }
+        
+        // Check for Cargo.toml with usi-engine binary
         let cargo_toml = current.join("Cargo.toml");
         if cargo_toml.exists() {
             // Check if this Cargo.toml defines the usi-engine binary
@@ -204,6 +216,7 @@ pub fn find_workspace_root() -> Option<std::path::PathBuf> {
                             // Check next few lines for name = "usi-engine"
                             for j in (i + 1)..std::cmp::min(i + 5, lines.len()) {
                                 if lines[j].contains("name = \"usi-engine\"") || lines[j].contains("name = 'usi-engine'") {
+                                    log::debug!("Found workspace root via Cargo.toml: {}", current.display());
                                     return Some(current.to_path_buf());
                                 }
                             }
@@ -894,5 +907,199 @@ pub async fn set_favorite_engine(
             Ok(CommandResponse::error(format!("Failed to set favorite engine: {}", e)))
         }
     }
+}
+
+/// Read image files from a directory
+/// Supports both bundled resources and user data directories
+#[tauri::command]
+pub async fn list_image_files(
+    directory: String, // 'wallpapers' or 'boards'
+    app_handle: tauri::AppHandle,
+) -> Result<Vec<String>, String> {
+    use std::fs;
+    use std::path::Path;
+    use tauri::Manager;
+    
+    let image_extensions = ["jpg", "jpeg", "png", "svg", "webp"];
+    let mut image_files = Vec::new();
+    
+    // Helper to check if a file is an image
+    fn is_image_file(path: &Path, extensions: &[&str]) -> bool {
+        if let Some(ext) = path.extension() {
+            if let Some(ext_str) = ext.to_str() {
+                return extensions.iter().any(|&e| e.eq_ignore_ascii_case(ext_str));
+            }
+        }
+        false
+    }
+    
+    // Helper to recursively collect image files
+    fn collect_images(
+        dir: &Path,
+        base_path: &str,
+        directory: &str,
+        image_files: &mut Vec<String>,
+        extensions: &[&str],
+    ) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    let new_base = if base_path.is_empty() {
+                        entry.file_name().to_string_lossy().to_string()
+                    } else {
+                        format!("{}/{}", base_path, entry.file_name().to_string_lossy())
+                    };
+                    collect_images(&path, &new_base, directory, image_files, extensions);
+                } else if is_image_file(&path, extensions) {
+                    let file_name = entry.file_name().to_string_lossy().to_string();
+                    let image_path = if base_path.is_empty() {
+                        format!("/{}/{}", directory, file_name)
+                    } else {
+                        format!("/{}/{}/{}", directory, base_path, file_name)
+                    };
+                    image_files.push(image_path);
+                }
+            }
+        }
+    }
+    
+    // Try to read from multiple locations:
+    // 1. Development: public directory (Vite serves these)
+    // 2. Development: dist directory (built assets)
+    // 3. Production: Resource directory (bundled images)
+    // 4. User data directory (for custom images)
+    
+    // 1. Development public directory (highest priority in dev)
+    #[cfg(debug_assertions)]
+    {
+        // Try multiple ways to find the public directory
+        let mut tried_paths = Vec::new();
+        
+        // Method 1: Try workspace root
+        if let Some(workspace_root) = find_workspace_root() {
+            let public_dir = workspace_root.join("public").join(&directory);
+            tried_paths.push(public_dir);
+        }
+        
+        // Method 2: Try current directory (most common case)
+        if let Ok(current_dir) = std::env::current_dir() {
+            tried_paths.push(current_dir.join("public").join(&directory));
+            // Also try going up one level (in case we're in src-tauri)
+            if let Some(parent) = current_dir.parent() {
+                tried_paths.push(parent.join("public").join(&directory));
+            }
+        }
+        
+        // Method 3: Try relative to executable (for tauri dev)
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                // Go up to workspace root from src-tauri/target/...
+                let mut current = exe_dir;
+                for _ in 0..6 {
+                    if let Some(parent) = current.parent() {
+                        let public_dir = parent.join("public").join(&directory);
+                        if !tried_paths.contains(&public_dir) {
+                            tried_paths.push(public_dir);
+                        }
+                        // Stop if we found a Cargo.toml (likely workspace root)
+                        if parent.join("Cargo.toml").exists() || parent.join("package.json").exists() {
+                            break;
+                        }
+                        current = parent;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Try each path and use the first one that exists
+        for public_dir in &tried_paths {
+            if public_dir.exists() {
+                log::info!("Reading images from development public directory: {}", public_dir.display());
+                collect_images(public_dir, "", &directory, &mut image_files, &image_extensions);
+                break; // Use first found directory
+            }
+        }
+        
+        // Log if we didn't find any public directory
+        if image_files.is_empty() {
+            log::warn!("No images found in public/{} directory. Tried paths:", directory);
+            for path in &tried_paths {
+                log::warn!("  - {} (exists: {})", path.display(), path.exists());
+            }
+        }
+        
+        // Also try dist directory (built assets)
+        if let Ok(current_dir) = std::env::current_dir() {
+            let dist_dir = current_dir.join("dist").join(&directory);
+            if dist_dir.exists() {
+                log::info!("Reading images from dist directory: {}", dist_dir.display());
+                collect_images(&dist_dir, "", &directory, &mut image_files, &image_extensions);
+            } else if let Some(parent) = current_dir.parent() {
+                let dist_dir = parent.join("dist").join(&directory);
+                if dist_dir.exists() {
+                    log::info!("Reading images from dist directory: {}", dist_dir.display());
+                    collect_images(&dist_dir, "", &directory, &mut image_files, &image_extensions);
+                }
+            }
+        }
+    }
+    
+    // 2. Resource directory (bundled images in production)
+    // These are the images bundled with the app from dist/wallpapers and dist/boards
+    // The resources are configured in tauri.conf.json to bundle ../dist/wallpapers/**/* and ../dist/boards/**/*
+    if let Ok(resource_dir) = app_handle.path().resource_dir() {
+        // Try direct path first (wallpapers/ or boards/ in resource dir)
+        let resource_path = resource_dir.join(&directory);
+        if resource_path.exists() {
+            log::info!("Reading images from resource directory: {}", resource_path.display());
+            collect_images(&resource_path, "", &directory, &mut image_files, &image_extensions);
+        } else {
+            // Also try looking in dist subdirectory (if resources preserved dist/ structure)
+            let dist_resource_path = resource_dir.join("dist").join(&directory);
+            if dist_resource_path.exists() {
+                log::info!("Reading images from dist resource directory: {}", dist_resource_path.display());
+                collect_images(&dist_resource_path, "", &directory, &mut image_files, &image_extensions);
+            } else {
+                log::debug!("Resource directory exists but {} subdirectory not found at: {} or {}", 
+                    directory, resource_path.display(), dist_resource_path.display());
+            }
+        }
+    } else {
+        log::debug!("Could not access resource directory (this is normal in development)");
+    }
+    
+    // 3. Production: Also check dist directory if accessible (for development builds)
+    #[cfg(not(debug_assertions))]
+    {
+        if let Some(workspace_root) = find_workspace_root() {
+            let dist_dir = workspace_root.join("dist").join(&directory);
+            if dist_dir.exists() {
+                log::info!("Reading images from production dist directory: {}", dist_dir.display());
+                collect_images(&dist_dir, "", &directory, &mut image_files, &image_extensions);
+            }
+        }
+    }
+    
+    // 4. User data directory (for custom images - works in both dev and production)
+    // Users can add their own images to ~/.config/shogi-vibe/wallpapers/ or boards/
+    if let Some(config_dir) = dirs::config_dir() {
+        let user_dir = config_dir.join("shogi-vibe").join(&directory);
+        if user_dir.exists() {
+            log::info!("Reading images from user directory: {}", user_dir.display());
+            collect_images(&user_dir, "", &directory, &mut image_files, &image_extensions);
+        } else {
+            log::debug!("User directory does not exist: {} (users can create this to add custom images)", user_dir.display());
+        }
+    }
+    
+    // Remove duplicates and sort
+    image_files.sort();
+    image_files.dedup();
+    
+    log::info!("Found {} images in {} directory", image_files.len(), directory);
+    Ok(image_files)
 }
 
