@@ -61,7 +61,18 @@ impl EngineInstance {
             stdin.write_all(command.as_bytes()).await?;
             stdin.write_all(b"\n").await?;
             stdin.flush().await?;
-            log::debug!("Sent command to engine {}: {}", self.id, command);
+            
+            // Log important commands at info level, others at debug
+            let trimmed = command.trim();
+            if trimmed.starts_with("go ") || trimmed == "go" 
+                || trimmed.starts_with("position ") 
+                || trimmed == "usi" 
+                || trimmed == "isready"
+                || trimmed.starts_with("setoption ") {
+                log::info!("Sent command to engine {}: {}", self.id, command);
+            } else {
+                log::debug!("Sent command to engine {}: {}", self.id, command);
+            }
             Ok(())
         } else {
             Err(anyhow!("Engine stdin not available"))
@@ -195,17 +206,24 @@ impl EngineManager {
 
                 // Update engine status based on output
                 if line.contains("usiok") {
+                    log::info!("Engine {} responded with usiok", engine_id);
                     if let Some(engine) = engines.read().await.get(&engine_id) {
                         engine.lock().await.status = EngineStatus::Ready;
                     }
                 } else if line.contains("readyok") {
+                    log::info!("Engine {} responded with readyok", engine_id);
                     if let Some(engine) = engines.read().await.get(&engine_id) {
                         engine.lock().await.status = EngineStatus::Ready;
                     }
                 } else if line.starts_with("bestmove") {
+                    log::info!("Engine {} responded with bestmove: {}", engine_id, line);
                     if let Some(engine) = engines.read().await.get(&engine_id) {
                         engine.lock().await.status = EngineStatus::Ready;
                     }
+                } else if line.starts_with("id ") {
+                    log::debug!("Engine {} identification: {}", engine_id, line);
+                } else if line.starts_with("option ") {
+                    log::debug!("Engine {} option: {}", engine_id, line);
                 }
 
                 // Emit event to frontend

@@ -1392,6 +1392,9 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // Memoize event handlers to prevent duplicate listeners
   const handlePlayer1UsiMessage = useCallback((engineId: string, message: string) => {
+    // Log all USI messages from engine
+    console.log(`[USI Engine ${engineId}] Received: ${message}`);
+    
     if (message.startsWith('bestmove')) {
       const { move } = parseBestMove(message);
       
@@ -1433,6 +1436,17 @@ const GamePage: React.FC<GamePageProps> = ({
         setThinkingMovePlayer1(firstPvMove);
       }
     }
+    
+    // Log specific USI protocol responses
+    if (message === 'usiok') {
+      console.log(`[USI Engine ${engineId}] Engine ready (usiok received)`);
+    } else if (message === 'readyok') {
+      console.log(`[USI Engine ${engineId}] Engine ready (readyok received)`);
+    } else if (message.startsWith('id ')) {
+      console.log(`[USI Engine ${engineId}] Engine identification: ${message}`);
+    } else if (message.startsWith('option ')) {
+      console.log(`[USI Engine ${engineId}] Engine option: ${message}`);
+    }
   }, [position, player1Type, player2Type, controller, recommendationsEnabled, parseRecommendationMove]);
 
   const handlePlayer1UsiError = useCallback((engineId: string, error: string) => {
@@ -1447,6 +1461,9 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // Memoize event handlers for second engine
   const handlePlayer2UsiMessage = useCallback((engineId: string, message: string) => {
+    // Log all USI messages from engine
+    console.log(`[USI Engine ${engineId}] Received: ${message}`);
+    
     if (message.startsWith('bestmove')) {
       const { move } = parseBestMove(message);
       
@@ -1487,6 +1504,17 @@ const GamePage: React.FC<GamePageProps> = ({
         const firstPvMove = info.pv[0];
         setThinkingMovePlayer2(firstPvMove);
       }
+    }
+    
+    // Log specific USI protocol responses
+    if (message === 'usiok') {
+      console.log(`[USI Engine ${engineId}] Engine ready (usiok received)`);
+    } else if (message === 'readyok') {
+      console.log(`[USI Engine ${engineId}] Engine ready (readyok received)`);
+    } else if (message.startsWith('id ')) {
+      console.log(`[USI Engine ${engineId}] Engine identification: ${message}`);
+    } else if (message.startsWith('option ')) {
+      console.log(`[USI Engine ${engineId}] Engine option: ${message}`);
     }
   }, [position, player1Type, player2Type, controller, recommendationsEnabled, parseRecommendationMove]);
 

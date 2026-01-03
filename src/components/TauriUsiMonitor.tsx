@@ -130,6 +130,9 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
 
   // Memoize callbacks to prevent unnecessary re-renders
   const handleUsiMessage = useCallback((engineId: string, message: string) => {
+    // Log all USI messages received in the monitor
+    console.log(`[USI Monitor] Engine ${engineId} received: ${message}`);
+    
     const newMessage: UsiMessage = {
       id: `received-${Date.now()}-${Math.random()}`,
       timestamp: new Date(),
@@ -192,6 +195,9 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
   }, []);
 
   const handleUsiError = useCallback((engineId: string, error: string) => {
+    // Log all USI errors received in the monitor
+    console.error(`[USI Monitor] Engine ${engineId} error: ${error}`);
+    
     const errorMessage: UsiMessage = {
       id: `error-${Date.now()}-${Math.random()}`,
       timestamp: new Date(),
