@@ -38,8 +38,8 @@
     "shortDescription": "Play Shogi (Japanese Chess) against AI",
     "longDescription": "A high-performance Shogi game with advanced AI powered by Rust. Features multiple difficulty levels, opening book, and beautiful themes.",
     "resources": [
-      "../dist/wallpapers/**/*",
-      "../dist/boards/**/*"
+      "../public/wallpapers/**/*",
+      "../public/boards/**/*"
     ],
     "copyright": "",
     "licenseFile": "",
