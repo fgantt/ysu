@@ -1,6 +1,6 @@
 # Master Layout Design Review
 
-This document chronicles the complete design journey for the new Game Page, containing all 12 options generated based on your feedback.
+This document chronicles the complete design journey for the new Game Page, containing all 19 options generated based on your feedback.
 
 ## Phase 1: Experimental Concepts
 *Broad exploration of styles: Grid, IDE, and Artistic.*
@@ -69,6 +69,44 @@ Attempt at mixing Bento style with strict alignments. (Use feedback: "Missed the
 Strict blend of Option 8 (Structure), Option 1 (Look), and Option 2 (Features). No glass.
 ![Integrated Grid](./integrated_grid_layout_1767568175838.png)
 
-### Option 12: Traditional Symmetry (Final Recommendation)
+### Option 12: Traditional Symmetry
 Addresses the "Diagonal Komadai" requirement. Square wooden piece stands, authentic placement.
 ![Traditional Symmetry](./diagonal_komadai_layout_1767568609045.png)
+
+---
+
+## Phase 6: Modernizing the Compact View (Iterative Refinement)
+
+### Option 13: Modernized Compact (Rejected)
+Initial responsive attempt. (Feedback: "Missing captured pieces, USI too basic, wallpaper too busy").
+![Modernized Compact](./modernized_compact_layout_1767745101568.png)
+
+### Option 14: Responsive Professional (Rejected)
+Attempt to fix USI/Captured pieces. (Feedback: "Still a miss.").
+![Responsive Professional](./responsive_professional_layout_1767745505334.png)
+
+### Option 15: Canvas Studio (Rejected)
+Attempt to make Option 2 "simpler". (Feedback: "Looks nothing like Option 2").
+![Canvas Studio](./canvas_studio_layout_1767745885702.png)
+
+### Option 16: Clean Tiled Dashboard (Rejected)
+Attempt to make Option 2 "premium". (Feedback: "Still a negative. Don't remove/move elements.").
+![Clean Tiled Dashboard](./clean_tiled_layout_1767746280442.png)
+
+### Option 17: Polished Compact Refactor (Rejected)
+Strict refactor but used Glass style. (Feedback: "Captured pieces blocks are missing... forget the transparent or glass effect.").
+![Polished Compact Refactor](./polished_compact_refactor_layout_1767746593906.png)
+
+### Option 18: Authentic Compact Refactor (Refined)
+Strict refactor with Solid Opaque panels.
+![Authentic Compact Refactor](./authentic_compact_refactor_layout_1767746865384.png)
+
+### Option 19: Traditional Compact Refactor (Recommendation)
+**Philosophy:** Distinguish between "Game Elements" and "UI Elements" while keeping everything strictly in place.
+
+**The Fix:**
+- **Game Elements (Board + Captured Pieces):** These now share the same **Wood/Paper Texture**. The "Captured Piece Blocks" (top left / bottom right) look like physical extensions of the board, not app widgets.
+- **UI Elements (History, Menu, USI):** These use a clean, unified **Dark Solid Theme**. They look like tools sitting on the table next to the board.
+- **Result:** It feels like a real board setup overlaying your wallpaper, with digital tools unobtrusively placed around it.
+
+![Traditional Compact Refactor](./traditional_compact_refactor_layout_1767747198526.png)
