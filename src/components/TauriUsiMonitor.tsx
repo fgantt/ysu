@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMultipleEngineEvents } from '../hooks/useTauriEvents';
 import { parseEngineInfo } from '../utils/tauriEngine';
 import type { EngineConfig } from '../types/engine';
@@ -52,6 +52,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
   player1Type,
   player2Type,
 }) => {
+  const monitoredEngineIds = useMemo(() => [...new Set(engineIds)], [engineIds]);
   const [activeTab, setActiveTab] = useState<TabType>(() => loadUsiMonitorState().activeTab);
   const [communicationHistory, setCommunicationHistory] = useState<UsiMessage[]>([]);
   const [searchInfoByEngine, setSearchInfoByEngine] = useState<Map<string, SearchInfo[]>>(new Map());
@@ -80,19 +81,19 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
   // Memoized to avoid recalculation on every render
   const getPlayerFromEngineId = useCallback((engineId: string): string => {
     // Check if this engine is player 1's engine (Sente)
-    if (player1EngineId === engineId) {
+    if (player1Type === 'ai' && player1EngineId === engineId) {
       return 'Sente';
     }
     // Check if this engine is player 2's engine (Gote)
-    if (player2EngineId === engineId) {
+    if (player2Type === 'ai' && player2EngineId === engineId) {
       return 'Gote';
     }
     
     // Fallback: infer from the order in engineIds (for backwards compatibility)
-    const index = engineIds.indexOf(engineId);
+    const index = monitoredEngineIds.indexOf(engineId);
     if (index === -1) return 'Unknown';
     return index === 0 ? 'Sente' : 'Gote';
-  }, [player1EngineId, player2EngineId, engineIds]);
+  }, [player1EngineId, player2EngineId, player1Type, player2Type, monitoredEngineIds]);
 
   // Listen to sent command events
   useEffect(() => {
@@ -114,7 +115,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
 
     // Register listeners for each engine
     const listeners: Array<{ engineId: string; handler: (event: Event) => void }> = [];
-    engineIds.forEach(engineId => {
+    monitoredEngineIds.forEach(engineId => {
       const handler = handleCommandSent(engineId);
       window.addEventListener(`usi-command-sent::${engineId}`, handler);
       listeners.push({ engineId, handler });
@@ -126,7 +127,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
         window.removeEventListener(`usi-command-sent::${engineId}`, handler);
       });
     };
-  }, [engineIds]);
+  }, [monitoredEngineIds]);
 
   // Memoize callbacks to prevent unnecessary re-renders
   const handleUsiMessage = useCallback((engineId: string, message: string) => {
@@ -328,7 +329,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
       <div className="usi-monitor-content">
         {activeTab === 'engine' && (
           <div className="engine-monitor-tab">
-            {engineIds.map((engineId, index) => {
+            {monitoredEngineIds.map((engineId, index) => {
               const lastSent = getLastSent(engineId);
               const lastReceived = getLastReceived(engineId);
               const player = getPlayerFromEngineId(engineId);
@@ -380,7 +381,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
 
         {activeTab === 'search' && (
           <div className="search-tab">
-            {engineIds.map((engineId, index) => {
+            {monitoredEngineIds.map((engineId, index) => {
               const searchInfo = searchInfoByEngine.get(engineId) || [];
               const player = getPlayerFromEngineId(engineId);
               const nps = npsPerEngine.get(engineId);
@@ -444,4 +445,3 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
     </div>
   );
 };
-

@@ -14,6 +14,7 @@ export function EngineManagementPage() {
   const [addingEngine, setAddingEngine] = useState(false);
   const [validating, setValidating] = useState(false);
   const [healthCheckResults, setHealthCheckResults] = useState<Map<string, EngineHealthResult>>(new Map());
+  const [isAddEngineExpanded, setIsAddEngineExpanded] = useState(false);
 
   // Form state for adding new engine
   const [newEngineName, setNewEngineName] = useState('');
@@ -277,9 +278,17 @@ export function EngineManagementPage() {
       )}
 
       {/* Add Engine Section */}
-      <section className="add-engine-section">
-        <h2>Add New Engine</h2>
-        <div className="add-engine-form">
+      <section className={`add-engine-section ${isAddEngineExpanded ? 'expanded' : ''}`}>
+        <button
+          type="button"
+          className="add-engine-toggle"
+          aria-expanded={isAddEngineExpanded}
+          onClick={() => setIsAddEngineExpanded(value => !value)}
+        >
+          <span>Add New Engine</span>
+          <span aria-hidden="true">{isAddEngineExpanded ? '−' : '+'}</span>
+        </button>
+        {isAddEngineExpanded && <div className="add-engine-form">
           <div className="form-row">
             <label>
               Engine Name:
@@ -348,7 +357,7 @@ export function EngineManagementPage() {
               Clear
             </button>
           </div>
-        </div>
+        </div>}
       </section>
 
       {/* Engine List Section */}
@@ -367,7 +376,7 @@ export function EngineManagementPage() {
           </div>
         ) : (
           <div className="engine-list">
-            {engines.map((engine) => (
+            {[...engines].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite)).map((engine) => (
               <div key={engine.id} className="engine-card">
                 <div className="engine-header">
                   <div className="engine-title">
@@ -457,4 +466,3 @@ export function EngineManagementPage() {
     </div>
   );
 }
-

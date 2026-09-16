@@ -4,6 +4,8 @@ html, body {
 }
 
 body {
+  background-color: #24352f;
+  background-image: linear-gradient(135deg, #24352f 0%, #4a3327 100%);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center center;

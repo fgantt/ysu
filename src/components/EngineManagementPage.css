@@ -77,20 +77,37 @@
 .add-engine-section {
   background: var(--color-bg-card);
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 0;
   margin-bottom: 2rem;
 }
 
-.add-engine-section h2 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
+.add-engine-toggle {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
   color: var(--color-heading);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.add-engine-toggle:hover {
+  background: var(--color-button-secondary-hover);
+}
+
+.add-engine-section.expanded .add-engine-toggle {
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .add-engine-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 1.5rem;
 }
 
 .form-row {
@@ -642,4 +659,3 @@
 .primary-button:hover {
   background: var(--color-button-primary-hover);
 }
-

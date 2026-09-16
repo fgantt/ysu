@@ -589,6 +589,7 @@ const PracticeExerciseDetail: React.FC = () => {
             {currentQ.options.map((option: any, index: number) => (
               <button
                 key={index}
+          aria-label={exerciseId === 'movement-identification' ? option.text : undefined}
           className={`answer-option ${
             exerciseId === 'name-identification' ? 'small-tile' : ''
           } ${

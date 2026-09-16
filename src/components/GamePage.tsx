@@ -1815,6 +1815,22 @@ const GamePage: React.FC<GamePageProps> = ({
     return <div>Loading...</div>;
   }
 
+  const getPlayerLabel = (side: 'sente' | 'gote') => {
+    const isSente = side === 'sente';
+    const type = isSente ? player1Type : player2Type;
+    const runtimeId = isSente ? player1EngineId : player2EngineId;
+    if (type === 'human') return `${isSente ? 'Sente' : 'Gote'} · You`;
+    return `${isSente ? 'Sente' : 'Gote'} · ${runtimeId ? (engineNames.get(runtimeId) || 'Engine') : 'Engine'}`;
+  };
+
+  const getTurnStatus = (side: 'sente' | 'gote') => {
+    const isSente = side === 'sente';
+    const isTurn = position.sfen.includes(isSente ? ' b ' : ' w ');
+    const type = isSente ? player1Type : player2Type;
+    if (!isTurn) return '';
+    return type === 'ai' ? 'Thinking…' : 'Your turn';
+  };
+
   if (gameLayout === 'compact') {
     return (
       <div className={`game-page game-page-${gameLayout}`}>
@@ -1982,13 +1998,15 @@ const GamePage: React.FC<GamePageProps> = ({
               <div className="compact-clock-area">
                 <div className="clock-row">
                   <span className="clock-label">
-                    {position.sfen.includes(' w ') ? '▶' : ' '} Gote
+                    {position.sfen.includes(' w ') ? '▶' : ' '} {getPlayerLabel('gote')}
+                    <small>{getTurnStatus('gote')}</small>
                   </span>
                   <Clock time={whiteTime} isByoyomi={isByoyomiWhite} />
                 </div>
                 <div className="clock-row">
                   <span className="clock-label">
-                    {position.sfen.includes(' b ') ? '▶' : ' '} Sente
+                    {position.sfen.includes(' b ') ? '▶' : ' '} {getPlayerLabel('sente')}
+                    <small>{getTurnStatus('sente')}</small>
                   </span>
                   <Clock time={blackTime} isByoyomi={isByoyomiBlack} />
                 </div>

@@ -46,8 +46,9 @@ const PracticePage: React.FC = () => {
       <div className="practice-content">
         <div className="exercises-grid">
           {practiceExercises.map((exercise) => (
-            <div 
+            <button
               key={exercise.id} 
+              type="button"
               className="exercise-card"
               onClick={() => handleExerciseSelect(exercise.id)}
             >
@@ -58,7 +59,7 @@ const PracticePage: React.FC = () => {
                 <span className="difficulty-badge">{exercise.difficulty}</span>
               </div>
               <div className="exercise-arrow">→</div>
-            </div>
+            </button>
           ))}
         </div>
 

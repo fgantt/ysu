@@ -24,7 +24,7 @@ export async function loadThemesConfig(): Promise<ThemesConfig> {
   }
 
   try {
-    const response = await fetch('/piece-themes/themes.json');
+    const response = await fetch('/piece-themes/themes.json', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Failed to load themes config: ${response.statusText}`);
     }

@@ -22,9 +22,12 @@
 }
 
 .usi-monitor {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: min(720px, calc(100vw - 32px));
+  max-height: min(72vh, 680px);
+  z-index: 950;
   background: var(--color-bg-panel);
   border: 1px solid var(--color-border-medium);
   border-radius: 8px;
@@ -103,8 +106,16 @@
 .usi-monitor-content {
   display: flex;
   flex-direction: column;
-  max-height: 600px;
+  max-height: calc(min(72vh, 680px) - 92px);
   overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+  .usi-monitor {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+  }
 }
 
 /* Engine Monitor Tab */

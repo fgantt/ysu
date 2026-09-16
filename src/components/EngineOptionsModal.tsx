@@ -24,10 +24,12 @@ export function EngineOptionsModal({ isOpen, engine, onClose, onSave, tempOption
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [optionQuery, setOptionQuery] = useState('');
 
   // Load saved options when modal opens
   useEffect(() => {
     if (isOpen && engine) {
+      setOptionQuery('');
       // Reset updated metadata when modal opens to force fresh load
       setUpdatedEngineMetadata(null);
       
@@ -378,16 +380,31 @@ export function EngineOptionsModal({ isOpen, engine, onClose, onSave, tempOption
     return opts;
   }, [engine, updatedEngineMetadata]); // Include updatedEngineMetadata in dependencies
 
+  const filteredOptions = useMemo(() => {
+    const query = optionQuery.trim().toLowerCase();
+    if (!query) return effectiveOptions;
+    return effectiveOptions.filter(option =>
+      option.name.toLowerCase().includes(query) || option.option_type.toLowerCase().includes(query)
+    );
+  }, [effectiveOptions, optionQuery]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !engine) {
     return null;
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="engine-options-title" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Configure Engine Options</h2>
-          <button className="modal-close" onClick={onClose}>
+          <h2 id="engine-options-title">Configure Engine Options</h2>
+          <button className="modal-close" onClick={onClose} aria-label="Close engine options">
             ×
           </button>
         </div>
@@ -427,7 +444,17 @@ export function EngineOptionsModal({ isOpen, engine, onClose, onSave, tempOption
           ) : effectiveOptions.length > 0 ? (
             <div className="options-section">
               <div className="options-header">
-                <h4>Available Options:</h4>
+                <div>
+                  <h4>Available Options</h4>
+                  <input
+                    className="option-search"
+                    type="search"
+                    value={optionQuery}
+                    onChange={(event) => setOptionQuery(event.target.value)}
+                    placeholder="Search options…"
+                    aria-label="Search engine options"
+                  />
+                </div>
                 <button
                   onClick={handleResetToDefaults}
                   className="reset-button"
@@ -438,7 +465,7 @@ export function EngineOptionsModal({ isOpen, engine, onClose, onSave, tempOption
               </div>
 
               <div className="options-list">
-                {effectiveOptions.map((option, index) => (
+                {filteredOptions.map((option, index) => (
                   <div key={index} className="option-item">
                     <div className="option-header">
                       <label className="option-name">{option.name}</label>
@@ -460,6 +487,7 @@ export function EngineOptionsModal({ isOpen, engine, onClose, onSave, tempOption
                     )}
                   </div>
                 ))}
+                {filteredOptions.length === 0 && <div className="no-options">No options match “{optionQuery}”.</div>}
               </div>
             </div>
           ) : (

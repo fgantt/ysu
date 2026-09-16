@@ -11,7 +11,7 @@ interface SaveGameModalProps {
 
 const SaveGameModal: React.FC<SaveGameModalProps> = ({ isOpen, onClose, onSave, gameData }) => {
   const [name, setName] = useState('');
-  const [format, setFormat] = useState<GameFormat>('sfen');
+  const [format, setFormat] = useState<GameFormat>('json');
   const [exportText, setExportText] = useState('');
   const [activeTab, setActiveTab] = useState<'save' | 'export'>('save');
 
@@ -59,11 +59,11 @@ const SaveGameModal: React.FC<SaveGameModalProps> = ({ isOpen, onClose, onSave, 
   if (!isOpen) return null;
 
   return (
-    <div className="save-game-modal-overlay">
-      <div className="save-game-modal">
+    <div className="save-game-modal-overlay" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="save-game-modal" role="dialog" aria-modal="true" aria-labelledby="save-game-title">
         <div className="save-game-modal-header">
-          <h2>Save Game</h2>
-          <button className="close-button" onClick={onClose}>
+          <h2 id="save-game-title">Save Game</h2>
+          <button className="close-button" onClick={onClose} aria-label="Close save game dialog">
             ×
           </button>
         </div>
@@ -103,10 +103,10 @@ const SaveGameModal: React.FC<SaveGameModalProps> = ({ isOpen, onClose, onSave, 
                   value={format}
                   onChange={(e) => setFormat(e.target.value as GameFormat)}
                 >
-                  <option value="sfen">SFEN (Position Only)</option>
+                  <option value="json">JSON (Full Game Data)</option>
                   <option value="csa">CSA (Computer Shogi Association)</option>
                   <option value="kif">KIF (Japanese Format)</option>
-                  <option value="json">JSON (Full Game Data)</option>
+                  <option value="sfen">SFEN (Position Only)</option>
                 </select>
               </div>
             </>

@@ -36,6 +36,7 @@ const CANNED_POSITIONS = [
 ];
 
 const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStartGame }) => {
+  const closeButtonRef = React.useRef<HTMLButtonElement>(null);
   const storedSettings = useMemo(() => loadNewGameSettings(), []);
   const isValidStoredPosition =
     storedSettings &&
@@ -80,8 +81,18 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
   React.useEffect(() => {
     if (isOpen) {
       loadEngines();
+      closeButtonRef.current?.focus();
     }
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !optionsModalOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, optionsModalOpen]);
 
   const loadEngines = async () => {
     try {
@@ -238,13 +249,13 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
   };
 
   return (
-    <div className="settings-overlay">
-      <div className="settings-panel">
-        <h2>New Game</h2>
-        <button className="settings-close-btn" onClick={onClose}>×</button>
+    <div className="settings-overlay" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="new-game-title">
+        <h2 id="new-game-title">New Game</h2>
+        <button ref={closeButtonRef} className="settings-close-btn" onClick={onClose} aria-label="Close new game dialog">×</button>
         <form onSubmit={handleSubmit}>
           <section>
-            <h3>Player 1 (Black)</h3>
+            <h3>Player 1 (Black / Sente)</h3>
             <div className="setting-group">
               <select
                 id="player1Type"
@@ -277,7 +288,7 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
             </div>
           </section>
           <section>
-            <h3>Player 2 (White)</h3>
+            <h3>Player 2 (White / Gote)</h3>
             <div className="setting-group">
               <select
                 id="player2Type"
@@ -332,6 +343,7 @@ const StartGameModal: React.FC<StartGameModalProps> = ({ isOpen, onClose, onStar
                 value={byoyomiInSeconds}
                 onChange={(e) => setByoyomiInSeconds(e.target.value)}
               />
+              <div className="help-text">Extra time granted for each move after the main clock expires.</div>
             </div>
           </section>
           <section>
