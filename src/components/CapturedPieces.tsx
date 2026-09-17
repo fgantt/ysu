@@ -63,7 +63,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({ captured, player, onPie
     <div 
       className={`captured-pieces ${player}`}
       style={boardBackground ? {
-        backgroundImage: `url('${boardBackground}')`,
+        backgroundImage: `url('${boardBackground}'), linear-gradient(90deg, #8b4513, #a45e32 48%, #8b4513)`,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center center'

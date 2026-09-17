@@ -17,14 +17,8 @@ const formatTime = (time: number) => {
 };
 
 const Clock: React.FC<ClockProps> = ({ time, isByoyomi }) => {
-  const clockStyle = {
-    color: isByoyomi ? 'red' : 'goldenrod',
-    fontFamily: 'monospace',
-    fontSize: '1.5rem',
-  };
-
   return (
-    <div style={clockStyle}>
+    <div className={`clock-time${isByoyomi ? ' clock-time-byoyomi' : ''}`}>
       {formatTime(time)}
     </div>
   );

@@ -129,19 +129,20 @@
   flex-direction: column;
   gap: 10px;
   flex-shrink: 0;
-  width: 245px; /* 3.5 squares wide */
-  height: 913px;
+  width: 245px;
+  height: 914px;
 }
 
 .compact-gote-captured {
-  height: 304px; /* 4 squares tall */
+  height: 245px;
   margin-top: 25px;
+  flex-shrink: 0;
 }
 
 .compact-gote-captured .captured-pieces {
   width: 100%;
   height: 100%;
-  min-height: 304px;
+  min-height: 245px;
 }
 
 /* Compact layout captured pieces styling */
@@ -150,18 +151,37 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
+  box-sizing: border-box;
+  border: 5px solid #4a2d19;
+  background-color: #96532d;
+  background-image: linear-gradient(90deg, #8b4513, #a45e32 48%, #8b4513);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 2px rgba(240, 193, 108, 0.45), 0 10px 22px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .game-page-compact .compact-gote-captured .captured-pieces h3,
 .game-page-compact .compact-sente-captured .captured-pieces h3 {
   order: 1;
-  margin-bottom: 10px;
-  width: 40%;
+  margin: 0 0 8px;
+  width: auto;
+  min-width: 50%;
   text-align: center;
+  background: rgba(32, 24, 17, 0.82);
+  color: #fff4da;
+  border-radius: 0 0 6px 0;
+  clip-path: none;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.game-page-compact .captured-pieces h3 span {
+  color: inherit !important;
 }
 
 .game-page-compact .compact-sente-captured .captured-pieces h3 {
   margin-left: auto;
+  border-radius: 0 0 0 6px;
 }
 
 .game-page-compact .compact-gote-captured .captured-pieces .pieces-list,
@@ -172,18 +192,74 @@
   align-items: flex-start !important;
   align-content: flex-start;
   padding-top: 0;
+  gap: 3px;
+}
+
+.game-page-compact .compact-gote-captured .pieces-list .piece,
+.game-page-compact .compact-sente-captured .pieces-list .piece {
+  zoom: 0.78;
 }
 
 .compact-move-log {
   flex-grow: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .compact-move-log .move-log {
   width: 100%;
   height: 100%;
   max-height: none;
-  min-height: 380px; /* Extend to bottom of board */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-panel);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 6px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.compact-move-log .move-log h3 {
+  color: var(--color-heading);
+  padding: 9px 6px;
+  margin: 0;
+  background: var(--color-bg-card);
+}
+
+.compact-move-log .move-table-container,
+.compact-move-log .move-table tbody {
+  max-height: none;
+}
+
+.compact-move-log .move-table-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.compact-move-log .move-table {
+  color: var(--color-text-primary);
+}
+
+.compact-move-log .move-table th,
+.compact-move-log .move-table td {
+  border-color: var(--color-border-light);
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.compact-move-log .move-table th {
+  background: var(--color-bg-card);
+}
+
+.compact-move-log .move-table tbody tr:nth-child(odd) {
+  background: var(--color-bg-panel);
+}
+
+.compact-move-log .move-table tbody tr:nth-child(even) {
+  background: var(--color-bg-card);
 }
 
 .compact-board-area {
@@ -210,15 +286,80 @@
   flex-shrink: 0;
   width: 245px; /* 3.5 squares wide */
   align-items: flex-end;
-  height: 913px;
+  height: 914px;
   justify-content: flex-start;
-  margin-left: 20px;
+  /* The board's rank labels extend beyond its layout box; restore a visible gutter. */
+  margin-left: 24px;
 }
 
 .compact-menu-area {
   flex-shrink: 0;
   width: 100%;
   order: 1;
+  position: relative;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+}
+
+.compact-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 88px;
+  min-height: 42px;
+  background: var(--color-bg-panel);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 6px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.compact-menu-toggle:hover,
+.compact-menu-toggle[aria-expanded='true'] {
+  background: var(--color-button-secondary-hover);
+}
+
+.compact-menu-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 245px;
+  background: var(--color-bg-panel);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.compact-menu-popover .game-controls {
+  margin: 0;
+  padding: 8px;
+  background: transparent;
+  gap: 4px;
+}
+
+.compact-menu-popover .game-controls-left,
+.compact-menu-popover .game-controls-right {
+  gap: 4px;
+}
+
+.compact-menu-popover .game-controls button {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--color-text-primary);
+  text-align: left;
+}
+
+.compact-menu-popover .game-controls button:hover {
+  background: var(--color-button-secondary-hover);
 }
 
 .compact-menu-area .game-controls {
@@ -241,11 +382,16 @@
   font-size: 1rem;
   font-weight: bold;
   order: 2;
-  margin: 10px 0;
-  padding: 10px;
-  background-color: green;
-  color: black;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px;
+  background: var(--color-bg-panel);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-medium);
   border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  gap: 6px;
 }
 
 .classic-clock-area {
@@ -271,20 +417,40 @@
   width: 100%;
 }
 
-.clock-label {
+.compact-clock-area .clock-row {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px;
+  background: var(--color-bg-card);
+  border-radius: 5px;
+}
+
+.compact-clock-area .clock-label {
   font-weight: bold;
-  color: black;
-  min-width: 60px;
-  max-width: 145px;
+  color: var(--color-text-primary);
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
 }
 
-/* Style for the clock times to be goldenrod */
-.clock-row > div {
-  color: goldenrod;
+/* Clocks follow the selected appearance theme. */
+.clock-time {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-time-byoyomi {
+  color: var(--color-error-text);
+}
+
+.compact-clock-area .clock-time {
+  font-size: 1.05rem;
 }
 
 .clock-label small {
@@ -298,16 +464,16 @@
 }
 
 .compact-sente-captured {
-  height: 304px; /* 4 squares tall - same as Gote */
+  height: 245px;
   width: 100%;
   order: 3;
-  margin-top: auto; /* Push to bottom */
+  margin-top: auto;
 }
 
 .compact-sente-captured .captured-pieces {
   width: 100%;
   height: 100%;
-  min-height: 304px;
+  min-height: 245px;
 }
 
 /* Make board bigger in compact layout */
@@ -330,6 +496,20 @@
 .game-page-compact .row-numbers {
   height: 889px; /* 684px * 1.3 */
   margin-left: 273px; /* Move right by 3 squares width (3 * 91px) */
+}
+
+.game-page-compact .column-number-cell,
+.game-page-compact .board-and-row-numbers .row-number-cell {
+  background: #30241b;
+  color: #f1dfb7;
+  font-size: 0.78rem;
+  border: 1px solid #56402b;
+  box-sizing: border-box;
+}
+
+.game-page-compact .board {
+  border: 3px solid #4a2d19;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.32);
 }
 
 .game-page-compact .row-number-cell {
@@ -356,8 +536,8 @@
   display: flex !important;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 139, 0.75);
-  color: #eee;
+  background: #30241b;
+  color: #f1dfb7;
   font-weight: bold;
   padding: 0 3px;
 }
@@ -399,6 +579,7 @@
   .compact-left-side {
     width: 100%;
     max-width: 630px;
+    height: auto;
   }
 
   .compact-right-side {
@@ -406,18 +587,22 @@
     max-width: 630px;
     align-items: center;
     height: auto;
+    margin-left: 0;
   }
+
+  .compact-menu-area { margin-top: 0; }
 
   .compact-gote-captured,
   .compact-sente-captured {
-    height: auto;
-    min-height: 80px;
+    width: 245px;
+    height: 245px;
+    min-height: 245px;
   }
 
   .compact-gote-captured .captured-pieces,
   .compact-sente-captured .captured-pieces {
-    height: auto;
-    min-height: 80px;
+    height: 100%;
+    min-height: 245px;
   }
 
   .compact-move-log .move-log {
@@ -471,16 +656,6 @@
     width: 635px;
   }
 
-  /* Reset menu to horizontal on mobile */
-  .compact-menu-area .game-controls {
-    flex-direction: row;
-  }
-
-  .compact-menu-area .game-controls-left,
-  .compact-menu-area .game-controls-right {
-    flex-direction: row;
-  }
-
   .game-page-compact .shogi-board-container {
     align-items: center;
   }
@@ -488,10 +663,12 @@
 
 @media (max-width: 1380px) and (min-width: 1101px) {
   .compact-main-content { zoom: 0.82; }
+  .compact-right-side { margin-left: 24px; }
 }
 
 @media (max-width: 1100px) and (min-width: 769px) {
   .compact-main-content { zoom: 0.64; }
+  .compact-right-side { margin-left: 24px; }
 }
 
 @keyframes breathing {

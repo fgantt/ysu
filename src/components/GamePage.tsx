@@ -175,6 +175,7 @@ const GamePage: React.FC<GamePageProps> = ({
   };
   const controller = useShogiController();
   const [position, setPosition] = useState<ImmutablePosition | null>(null);
+  const [isCompactMenuOpen, setIsCompactMenuOpen] = useState(false);
   const [renderKey, setRenderKey] = useState(0); // Force re-render counter
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
@@ -1982,7 +1983,11 @@ const GamePage: React.FC<GamePageProps> = ({
             {/* Right side: Menu and Sente captured pieces */}
             <div className="compact-right-side">
               <div className="compact-menu-area">
-                <GameControls 
+                <button className="compact-menu-toggle" type="button" aria-label="Game menu" aria-expanded={isCompactMenuOpen} aria-controls="compact-game-menu" onClick={() => setIsCompactMenuOpen(open => !open)}>
+                  <span aria-hidden="true">☰</span><span>Menu</span>
+                </button>
+                {isCompactMenuOpen && <div className="compact-menu-popover" id="compact-game-menu">
+                  <GameControls
                   onExitGame={handleExitGame}
                   onNewGame={handleNewGame} 
                   onOpenSettings={() => setIsSettingsOpen(true)} 
@@ -1993,7 +1998,8 @@ const GamePage: React.FC<GamePageProps> = ({
                   recommendationsEnabled={recommendationsEnabled}
                   hasHumanPlayer={controller.hasHumanPlayer()}
                   onCycleBoardBackground={handleCycleBoardBackground}
-                />
+                  />
+                </div>}
               </div>
               <div className="compact-clock-area">
                 <div className="clock-row">
