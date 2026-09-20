@@ -238,7 +238,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     return fileName;
   };
 
-  const themes: Theme[] = ['light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia'];
+  const themes: Theme[] = ['dynamic', 'light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia'];
 
   const renderTabContent = () => {
     switch (activeTab) {

@@ -21,12 +21,14 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { PhysicalSize } from '@tauri-apps/api/dpi';
 import { loadUsiMonitorState, saveUsiMonitorState, loadWindowSize, saveWindowSize } from './utils/persistence';
 import { getFallbackWallpaperImages, loadWallpaperImages } from './utils/imageLoader';
+import { useDynamicTheme } from './hooks/useDynamicTheme';
 
 // --- Singleton ShogiController ---
 const shogiController = new ShogiController();
 // ---------------------------------
 
 function App() {
+  useDynamicTheme();
   const [isControllerInitialized, setIsControllerInitialized] = useState(shogiController.isInitialized());
 
   // USI Monitor state

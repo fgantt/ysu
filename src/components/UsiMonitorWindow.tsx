@@ -6,6 +6,7 @@ import { TauriUsiMonitor } from './TauriUsiMonitor';
 import { USI_WINDOW_BOUNDS_KEY, type MonitorSession } from './UsiMonitorHost';
 import '../styles/themes.css';
 import './UsiMonitor.css';
+import { useDynamicTheme } from '../hooks/useDynamicTheme';
 
 function initialSession(): MonitorSession | null {
   try {
@@ -15,6 +16,7 @@ function initialSession(): MonitorSession | null {
 }
 
 export function UsiMonitorWindow() {
+  useDynamicTheme();
   const [session, setSession] = useState(initialSession);
 
   useEffect(() => {

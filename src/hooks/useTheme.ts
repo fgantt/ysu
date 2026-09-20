@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export type Theme = 'light' | 'dark' | 'traditional' | 'ocean' | 'forest' | 'midnight' | 'sunset' | 'cyberpunk' | 'cherry' | 'monochrome' | 'sepia';
+export type Theme = 'light' | 'dark' | 'traditional' | 'ocean' | 'forest' | 'midnight' | 'sunset' | 'cyberpunk' | 'cherry' | 'monochrome' | 'sepia' | 'dynamic';
 
 const THEME_STORAGE_KEY = 'shogiVibeTheme';
 const DEFAULT_THEME: Theme = 'light';
@@ -43,7 +43,7 @@ export function useTheme() {
  * Type guard to check if a string is a valid Theme
  */
 function isValidTheme(value: string): value is Theme {
-  return ['light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia'].includes(value);
+  return ['light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia', 'dynamic'].includes(value);
 }
 
 /**
@@ -62,6 +62,7 @@ export function getThemeDisplayName(theme: Theme): string {
     cherry: 'Cherry Blossom',
     monochrome: 'Monochrome',
     sepia: 'Sepia Vintage',
+    dynamic: 'Dynamic',
   };
   return names[theme];
 }
@@ -82,7 +83,7 @@ export function getThemeDescription(theme: Theme): string {
     cherry: 'Soft pink theme with Japanese aesthetics',
     monochrome: 'Clean black and white professional',
     sepia: 'Warm vintage aged paper look',
+    dynamic: 'Colors coordinated with your current board and pieces',
   };
   return descriptions[theme];
 }
-

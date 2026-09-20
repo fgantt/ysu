@@ -101,7 +101,8 @@
 /* ===========================
    DARK THEME
    =========================== */
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-theme="dynamic"] {
   /* Background Colors */
   --color-bg-modal: rgba(26, 32, 44, 0.98);
   --color-bg-panel: #1a202c;

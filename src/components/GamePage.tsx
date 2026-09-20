@@ -652,6 +652,7 @@ const GamePage: React.FC<GamePageProps> = ({
         const randomBoardBackground = finalBoardPaths[Math.floor(Math.random() * finalBoardPaths.length)];
         setBoardBackground(randomBoardBackground);
         localStorage.setItem('shogi-board-background', randomBoardBackground);
+        window.dispatchEvent(new Event('shogi-appearance-change'));
       }
     };
 
@@ -1664,6 +1665,9 @@ const GamePage: React.FC<GamePageProps> = ({
   const handleSettingChange = (setter: (value: any) => void, key: string) => (value: any) => {
     setter(value);
     localStorage.setItem(key, value.toString());
+    if (key === 'shogi-board-background' || key === 'shogi-piece-label-type') {
+      window.dispatchEvent(new Event('shogi-appearance-change'));
+    }
     
     // Dispatch custom event for same-tab theme updates
     if (key === 'shogi-piece-label-type') {

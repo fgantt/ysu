@@ -157,6 +157,8 @@ const HomePage: React.FC = () => {
 
   const handleSelectBoardBackground = (boardBackground: string) => {
     setCurrentBoardBackground(boardBackground);
+    localStorage.setItem('shogi-board-background', boardBackground);
+    window.dispatchEvent(new Event('shogi-appearance-change'));
   };
 
   const handlePieceThemeChange = (theme: string) => {
@@ -208,6 +210,7 @@ const HomePage: React.FC = () => {
   const handleBoardBackgroundChange = (background: string) => {
     setCurrentBoardBackground(background);
     localStorage.setItem('shogi-board-background', background);
+    window.dispatchEvent(new Event('shogi-appearance-change'));
   };
 
   return (
