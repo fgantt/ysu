@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PiecePreview from './PiecePreview';
 import ThemeSelector from './ThemeSelector';
 import { useTheme, getThemeDisplayName, getThemeDescription, type Theme } from '../hooks/useTheme';
@@ -7,10 +7,10 @@ import { EngineSelector } from './EngineSelector';
 import { EngineOptionsModal } from './EngineOptionsModal';
 import type { EngineConfig } from '../types/engine';
 import { invoke } from '@tauri-apps/api/core';
+import { loadSettingsViewState, saveSettingsViewState, type SettingsTab } from '../utils/settingsViewState';
 import '../styles/settings.css';
 
 type Notation = 'western' | 'kifu' | 'usi' | 'csa';
-type SettingsTab = 'appearance' | 'display' | 'notation' | 'backgrounds' | 'engines';
 
 interface SettingsPanelProps {
   pieceThemeType: string;
@@ -73,13 +73,72 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   recommendationEngineOptions,
   onRecommendationEngineOptionsChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
-  const [isBoardBackgroundCollapsed, setIsBoardBackgroundCollapsed] = useState(false);
-  const [isWallpaperCollapsed, setIsWallpaperCollapsed] = useState(false);
-  const [isColorThemeCollapsed, setIsColorThemeCollapsed] = useState(false);
-  const [isPieceThemesCollapsed, setIsPieceThemesCollapsed] = useState(false);
+  const [initialView] = useState(loadSettingsViewState);
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialView.activeTab);
+  const [isBoardBackgroundCollapsed, setIsBoardBackgroundCollapsed] = useState(initialView.collapsed.boardBackground);
+  const [isWallpaperCollapsed, setIsWallpaperCollapsed] = useState(initialView.collapsed.wallpaper);
+  const [isColorThemeCollapsed, setIsColorThemeCollapsed] = useState(initialView.collapsed.colorTheme);
+  const [isPieceThemesCollapsed, setIsPieceThemesCollapsed] = useState(initialView.collapsed.pieceThemes);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const scrollPositionsRef = useRef(initialView.scrollTop);
+  const restoringScrollRef = useRef(false);
+  const restoreObserverRef = useRef<MutationObserver | null>(null);
   const { theme, setTheme } = useTheme();
   const volumePreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const persistView = useCallback(() => {
+    saveSettingsViewState({
+      activeTab,
+      scrollTop: scrollPositionsRef.current,
+      collapsed: {
+        boardBackground: isBoardBackgroundCollapsed,
+        wallpaper: isWallpaperCollapsed,
+        colorTheme: isColorThemeCollapsed,
+        pieceThemes: isPieceThemesCollapsed,
+      },
+    });
+  }, [activeTab, isBoardBackgroundCollapsed, isWallpaperCollapsed, isColorThemeCollapsed, isPieceThemesCollapsed]);
+
+  useEffect(() => { persistView(); }, [persistView]);
+
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    const desired = scrollPositionsRef.current[activeTab];
+    if (desired === 0) { content.scrollTop = 0; return; }
+    restoringScrollRef.current = true;
+    const restore = () => {
+      content.scrollTop = desired;
+      if (Math.abs(content.scrollTop - desired) < 1) {
+        restoringScrollRef.current = false;
+        observer.disconnect();
+        restoreObserverRef.current = null;
+      }
+    };
+    const observer = new MutationObserver(restore);
+    restoreObserverRef.current = observer;
+    observer.observe(content, { childList: true, subtree: true });
+    const frame = requestAnimationFrame(restore);
+    restore();
+    return () => { observer.disconnect(); restoreObserverRef.current = null; cancelAnimationFrame(frame); restoringScrollRef.current = false; };
+  }, [activeTab]);
+
+  const cancelScrollRestore = () => {
+    restoreObserverRef.current?.disconnect();
+    restoreObserverRef.current = null;
+    restoringScrollRef.current = false;
+  };
+
+  const switchTab = (next: SettingsTab) => {
+    if (contentRef.current && !restoringScrollRef.current) scrollPositionsRef.current[activeTab] = contentRef.current.scrollTop;
+    setActiveTab(next);
+  };
+
+  const closeSettings = () => {
+    if (contentRef.current && !restoringScrollRef.current) scrollPositionsRef.current[activeTab] = contentRef.current.scrollTop;
+    persistView();
+    onClose();
+  };
   
   // Recommendation engine options modal state
   const [optionsModalOpen, setOptionsModalOpen] = useState(false);
@@ -495,48 +554,56 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <div className="settings-header">
           <h2>Settings</h2>
         </div>
-        <button className="settings-close-btn" onClick={onClose}>×</button>
+        <button className="settings-close-btn" onClick={closeSettings}>×</button>
         
         <div className="settings-content">
           <div className="settings-tabs">
             <button 
               className={`settings-tab ${activeTab === 'appearance' ? 'active' : ''}`}
-              onClick={() => setActiveTab('appearance')}
+              onClick={() => switchTab('appearance')}
             >
               <span className="tab-icon">🎨</span>
               <span className="tab-label">Appearance</span>
             </button>
             <button 
               className={`settings-tab ${activeTab === 'display' ? 'active' : ''}`}
-              onClick={() => setActiveTab('display')}
+              onClick={() => switchTab('display')}
             >
               <span className="tab-icon">⚙️</span>
               <span className="tab-label">Display</span>
             </button>
             <button 
               className={`settings-tab ${activeTab === 'notation' ? 'active' : ''}`}
-              onClick={() => setActiveTab('notation')}
+              onClick={() => switchTab('notation')}
             >
               <span className="tab-icon">📝</span>
               <span className="tab-label">Notation</span>
             </button>
             <button 
               className={`settings-tab ${activeTab === 'backgrounds' ? 'active' : ''}`}
-              onClick={() => setActiveTab('backgrounds')}
+              onClick={() => switchTab('backgrounds')}
             >
               <span className="tab-icon">🖼️</span>
               <span className="tab-label">Backgrounds</span>
             </button>
             <button 
               className={`settings-tab ${activeTab === 'engines' ? 'active' : ''}`}
-              onClick={() => setActiveTab('engines')}
+              onClick={() => switchTab('engines')}
             >
               <span className="tab-icon">🤖</span>
               <span className="tab-label">Engines</span>
             </button>
           </div>
           
-          <div className="settings-tab-content">
+          <div
+            ref={contentRef}
+            className="settings-tab-content"
+            onScroll={event => {
+              if (!restoringScrollRef.current) scrollPositionsRef.current[activeTab] = event.currentTarget.scrollTop;
+            }}
+            onWheel={cancelScrollRestore}
+            onPointerDown={cancelScrollRestore}
+          >
             {renderTabContent()}
           </div>
         </div>

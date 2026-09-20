@@ -14,7 +14,7 @@ import CheckmateModal from './CheckmateModal';
 import SaveGameModal from './SaveGameModal';
 import LoadGameModal from './LoadGameModal';
 import UsiMonitor from './UsiMonitor';
-import { TauriUsiMonitor } from './TauriUsiMonitor';
+import { UsiMonitorHost } from './UsiMonitorHost';
 import StartGameModal from './StartGameModal';
 import Clock from './Clock';
 import { getAvailablePieceThemes, AVAILABLE_PIECE_THEMES } from '../utils/pieceThemes';
@@ -145,6 +145,7 @@ interface GamePageProps {
   }>;
   sessions: string[];
   onToggleUsiMonitor: () => void;
+  onDismissUsiMonitor: () => void;
   clearUsiHistory: () => void;
 }
 
@@ -155,6 +156,7 @@ const GamePage: React.FC<GamePageProps> = ({
   communicationHistory,
   sessions,
   onToggleUsiMonitor,
+  onDismissUsiMonitor,
   clearUsiHistory
 }) => {
   const SQUARE_WIDTH = 70;
@@ -183,7 +185,8 @@ const GamePage: React.FC<GamePageProps> = ({
   const [selectedCapturedPiece, setSelectedCapturedPiece] = useState<TsshogiPieceType | null>(null);
   const [promotionMove, setPromotionMove] = useState<{ from: Square; to: Square; pieceType: TsshogiPieceType; player: 'player1' | 'player2'; destinationSquareUsi: string } | null>(null);
   const [winner, setWinnerState] = useState<'player1' | 'player2' | 'draw' | null>(null);
-  const [endgameType, setEndgameType] = useState<'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse'>('checkmate');
+  const [isGameOverDialogDismissed, setIsGameOverDialogDismissed] = useState(false);
+  const [endgameType, setEndgameType] = useState<'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse' | 'timeout'>('checkmate');
   const [endgameDetails, setEndgameDetails] = useState<string | undefined>(undefined);
   const gameInitializedRef = useRef(false); // Prevent double initialization in strict mode
   const componentId = useRef(`COMPONENT-${Math.random().toString(36).substr(2, 9)}`);
@@ -552,7 +555,7 @@ const GamePage: React.FC<GamePageProps> = ({
     
     const handleGameOver = (data: { 
       winner: 'player1' | 'player2' | 'draw';
-      endgameType?: 'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse';
+      endgameType?: 'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse' | 'timeout';
       details?: string;
     }) => {
       console.log('[GAMEPAGE] ========================================');
@@ -657,7 +660,7 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // Timer for clock counting - only start after first move
   useEffect(() => {
-    if (!position) return;
+    if (!position || winner) return;
 
     // Don't start the clock until after the first move is made
     // Use the same filtering logic as MoveLog component to check for actual moves
@@ -1135,7 +1138,7 @@ const GamePage: React.FC<GamePageProps> = ({
   };
 
   const handleNewGame = () => {
-    setWinner(null); // Clear winner state to dismiss CheckmateModal
+    setIsGameOverDialogDismissed(true);
     setIsStartGameModalOpen(true);
   };
 
@@ -1250,6 +1253,7 @@ const GamePage: React.FC<GamePageProps> = ({
       console.error('Failed to start new game:', error);
     });
     setWinner(null);
+    setIsGameOverDialogDismissed(false);
     setIsStartGameModalOpen(false);
   };
 
@@ -1654,7 +1658,7 @@ const GamePage: React.FC<GamePageProps> = ({
   }, [useTauriEngine, activeEngineIds]);
 
   const handleDismiss = () => {
-    setWinner(null);
+    setIsGameOverDialogDismissed(true);
   };
 
   const handleSettingChange = (setter: (value: any) => void, key: string) => (value: any) => {
@@ -1816,13 +1820,16 @@ const GamePage: React.FC<GamePageProps> = ({
     return <div>Loading...</div>;
   }
 
-  const getPlayerLabel = (side: 'sente' | 'gote') => {
+  const getPlayerName = (side: 'sente' | 'gote') => {
     const isSente = side === 'sente';
     const type = isSente ? player1Type : player2Type;
     const runtimeId = isSente ? player1EngineId : player2EngineId;
-    if (type === 'human') return `${isSente ? 'Sente' : 'Gote'} · You`;
-    return `${isSente ? 'Sente' : 'Gote'} · ${runtimeId ? (engineNames.get(runtimeId) || 'Engine') : 'Engine'}`;
+    if (type === 'human') return 'You';
+    return runtimeId ? (engineNames.get(runtimeId) || 'Engine') : 'Engine';
   };
+
+  const getPlayerLabel = (side: 'sente' | 'gote') =>
+    `${side === 'sente' ? 'Sente' : 'Gote'} · ${getPlayerName(side)}`;
 
   const getTurnStatus = (side: 'sente' | 'gote') => {
     const isSente = side === 'sente';
@@ -2004,16 +2011,18 @@ const GamePage: React.FC<GamePageProps> = ({
               <div className="compact-clock-area">
                 <div className="clock-row">
                   <span className="clock-label">
-                    {position.sfen.includes(' w ') ? '▶' : ' '} {getPlayerLabel('gote')}
-                    <small>{getTurnStatus('gote')}</small>
+                    <span className="clock-side">{position.sfen.includes(' w ') ? '▶ ' : ''}Gote</span>
+                    <span className="clock-player-name">{getPlayerName('gote')}</span>
                   </span>
+                  <small className="clock-status">{getTurnStatus('gote')}</small>
                   <Clock time={whiteTime} isByoyomi={isByoyomiWhite} />
                 </div>
                 <div className="clock-row">
                   <span className="clock-label">
-                    {position.sfen.includes(' b ') ? '▶' : ' '} {getPlayerLabel('sente')}
-                    <small>{getTurnStatus('sente')}</small>
+                    <span className="clock-side">{position.sfen.includes(' b ') ? '▶ ' : ''}Sente</span>
+                    <span className="clock-player-name">{getPlayerName('sente')}</span>
                   </span>
+                  <small className="clock-status">{getTurnStatus('sente')}</small>
                   <Clock time={blackTime} isByoyomi={isByoyomiBlack} />
                 </div>
               </div>
@@ -2072,7 +2081,7 @@ const GamePage: React.FC<GamePageProps> = ({
           onClose={() => setIsStartGameModalOpen(false)} 
           onStartGame={handleStartGame} 
         />
-        {winner && (
+        {winner && !isGameOverDialogDismissed && (
           <CheckmateModal 
             winner={winner}
             endgameType={endgameType}
@@ -2086,18 +2095,13 @@ const GamePage: React.FC<GamePageProps> = ({
         {useTauriEngine ? (
           // Only render TauriUsiMonitor when engines are properly initialized
           activeEngineIds.length > 0 ? (
-            <TauriUsiMonitor
+            <UsiMonitorHost
               key={`${player1EngineId}-${player2EngineId}-${activeEngineIds.join(',')}`}
-              engineIds={activeEngineIds}
+              session={{ engineIds: activeEngineIds, engineNames: Object.fromEntries(engineNames), player1EngineId, player2EngineId, player1Type: getPlayerTypesFromState().player1Type, player2Type: getPlayerTypesFromState().player2Type }}
               engines={availableEngines}
-              engineNames={engineNames}
               isVisible={isUsiMonitorVisible}
               onToggle={onToggleUsiMonitor}
-              onSendCommand={(engineId, command) => sendUsiCommand(engineId, command)}
-              player1EngineId={player1EngineId}
-              player2EngineId={player2EngineId}
-              player1Type={getPlayerTypesFromState().player1Type}
-              player2Type={getPlayerTypesFromState().player2Type}
+              onDismiss={onDismissUsiMonitor}
             />
           ) : null
         ) : (
@@ -2310,7 +2314,7 @@ const GamePage: React.FC<GamePageProps> = ({
         onClose={() => setIsStartGameModalOpen(false)} 
         onStartGame={handleStartGame} 
       />
-      {winner && (
+      {winner && !isGameOverDialogDismissed && (
         <CheckmateModal 
           winner={winner}
           endgameType={endgameType}
@@ -2330,18 +2334,13 @@ const GamePage: React.FC<GamePageProps> = ({
       {useTauriEngine ? (
         // Only render TauriUsiMonitor when engines are properly initialized
         activeEngineIds.length > 0 ? (
-          <TauriUsiMonitor
+          <UsiMonitorHost
             key={`${player1EngineId}-${player2EngineId}-${activeEngineIds.join(',')}`}
-            engineIds={activeEngineIds}
+            session={{ engineIds: activeEngineIds, engineNames: Object.fromEntries(engineNames), player1EngineId, player2EngineId, player1Type: getPlayerTypesFromState().player1Type, player2Type: getPlayerTypesFromState().player2Type }}
             engines={availableEngines}
-            engineNames={engineNames}
             isVisible={isUsiMonitorVisible}
             onToggle={onToggleUsiMonitor}
-            onSendCommand={(engineId, command) => sendUsiCommand(engineId, command)}
-            player1EngineId={player1EngineId}
-            player2EngineId={player2EngineId}
-            player1Type={getPlayerTypesFromState().player1Type}
-            player2Type={getPlayerTypesFromState().player2Type}
+            onDismiss={onDismissUsiMonitor}
           />
         ) : null
       ) : (

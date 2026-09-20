@@ -117,6 +117,23 @@
   align-items: flex-start;
 }
 
+.secondary-panel-dock { width: min(720px, 100%); min-width: 0; }
+.secondary-panel-dock .usi-monitor-toggle { justify-content: flex-start; margin: 0; }
+.game-page-compact > .compact-layout > .secondary-panel-dock { margin-top: 10px; }
+.game-page-classic > .secondary-panel-dock { margin: 16px auto; }
+
+@media (min-width: 2050px) {
+  .compact-layout:has(> .secondary-panel-dock) {
+    max-width: none;
+    display: grid;
+    grid-template-columns: max-content minmax(420px, 600px);
+    align-items: start;
+    justify-content: center;
+    gap: 16px;
+  }
+  .compact-layout > .secondary-panel-dock { width: 100%; margin-top: 25px; }
+}
+
 .compact-main-content {
   display: flex;
   gap: 10px;
@@ -308,8 +325,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 88px;
+  width: 100%;
   min-height: 42px;
+  box-sizing: border-box;
   background: var(--color-bg-panel);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border-medium);
@@ -329,7 +347,8 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  width: 245px;
+  width: 100%;
+  box-sizing: border-box;
   background: var(--color-bg-panel);
   border: 1px solid var(--color-border-medium);
   border-radius: 8px;
@@ -418,22 +437,49 @@
 }
 
 .compact-clock-area .clock-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 4px 8px;
   min-width: 0;
   box-sizing: border-box;
-  padding: 8px;
+  padding: 10px;
   background: var(--color-bg-card);
   border-radius: 5px;
 }
 
 .compact-clock-area .clock-label {
-  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  grid-column: 1 / -1;
   color: var(--color-text-primary);
   min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
   text-align: left;
+}
+
+.compact-clock-area .clock-side {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.compact-clock-area .clock-player-name {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.compact-clock-area .clock-status {
+  grid-column: 1;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  align-self: end;
+  min-height: 1em;
 }
 
 /* Clocks follow the selected appearance theme. */
@@ -450,6 +496,8 @@
 }
 
 .compact-clock-area .clock-time {
+  grid-column: 2;
+  justify-self: end;
   font-size: 1.05rem;
 }
 
@@ -739,4 +787,16 @@
 
 .game-over-draw {
   animation: drawGlow 2s ease-in-out infinite;
+}
+
+.game-over-shogi-emblem {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.game-over-shogi-emblem svg {
+  width: 72px;
+  height: 80px;
+  filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.28));
 }

@@ -2,7 +2,7 @@ import React from 'react';
 
 interface CheckmateModalProps {
   winner: 'player1' | 'player2' | 'draw' | null;
-  endgameType?: 'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse';
+  endgameType?: 'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse' | 'timeout';
   details?: string;
   onDismiss: () => void;
   onNewGame: () => void;
@@ -62,9 +62,12 @@ const CheckmateModal: React.FC<CheckmateModalProps> = ({
         emoji = "🏯";
         message = `${winnerName} wins by impasse (Jishōgi / 持将棋)! ${loserName} had insufficient material (less than 24 points).`;
         break;
+      case 'timeout':
+        title = "Game Over";
+        message = `${winnerName} wins on time.`;
+        break;
       default:
         title = "Game Over";
-        emoji = "🎌";
         message = `${winnerName} wins!`;
     }
   } else {
@@ -78,7 +81,17 @@ const CheckmateModal: React.FC<CheckmateModalProps> = ({
   return (
     <div className={overlayClass}>
       <div className={panelClass}>
-        <div className={emojiClass} style={{ fontSize: '48px', textAlign: 'center', marginBottom: '16px' }}>{emoji}</div>
+        {emoji ? (
+          <div className={emojiClass} style={{ fontSize: '48px', textAlign: 'center', marginBottom: '16px' }}>{emoji}</div>
+        ) : (
+          <div className="game-over-shogi-emblem">
+            <svg viewBox="0 0 100 110" role="img" aria-label="Shogi king piece">
+              <path d="M50 5 91 28 82 103H18L9 28Z" fill="#d8a968" stroke="#684425" strokeWidth="4" />
+              <path d="M50 12 84 32 76 96H24L16 32Z" fill="#f1d198" stroke="#b78349" strokeWidth="2" />
+              <text x="50" y="75" textAnchor="middle" fontFamily="Hiragino Mincho ProN, Yu Mincho, serif" fontSize="52" fontWeight="700" fill="#302018">王</text>
+            </svg>
+          </div>
+        )}
         <h2 style={{ textAlign: 'center' }}>{title}</h2>
         <p style={{ textAlign: 'center', fontSize: '16px', margin: '16px 0' }}>{message}</p>
         {details && <p style={{ textAlign: 'center', fontSize: '14px', color: '#666', margin: '8px 0' }}>{details}</p>}

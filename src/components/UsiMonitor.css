@@ -4,6 +4,10 @@
   margin: 20px 0;
 }
 
+.usi-monitor-window { height: 100vh; padding: 8px; box-sizing: border-box; background: var(--color-bg-panel); }
+.usi-monitor-window .usi-monitor { height: 100%; max-height: none; }
+.usi-monitor-window .usi-monitor-content { max-height: none; flex: 1; }
+
 .toggle-button {
   background: var(--color-button-primary);
   color: var(--color-button-primary-text);
@@ -22,12 +26,9 @@
 }
 
 .usi-monitor {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  width: min(720px, calc(100vw - 32px));
-  max-height: min(72vh, 680px);
-  z-index: 950;
+  width: 100%;
+  min-width: 0;
+  max-height: 680px;
   background: var(--color-bg-panel);
   border: 1px solid var(--color-border-medium);
   border-radius: 8px;
@@ -50,6 +51,11 @@
   font-size: 16px;
   color: var(--color-heading);
 }
+
+.usi-monitor-actions { display: flex; align-items: center; gap: 8px; }
+.usi-monitor-action { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border-medium); border-radius: 4px; background: var(--color-bg-panel); color: var(--color-text-primary); padding: 5px; cursor: pointer; }
+.usi-monitor-action svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.usi-monitor-action:hover { background: var(--color-button-secondary-hover); }
 
 /* Tabs */
 .usi-monitor-tabs {
@@ -106,15 +112,13 @@
 .usi-monitor-content {
   display: flex;
   flex-direction: column;
-  max-height: calc(min(72vh, 680px) - 92px);
+  max-height: 590px;
   overflow-y: auto;
 }
 
 @media (max-width: 760px) {
   .usi-monitor {
-    right: 8px;
-    bottom: 8px;
-    width: calc(100vw - 16px);
+    width: 100%;
   }
 }
 
@@ -486,9 +490,9 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .usi-monitor {
-    width: calc(100vw - 40px);
+    width: 100%;
     max-width: none;
-    margin: 0 20px;
+    margin: 0;
   }
   
   .search-table {

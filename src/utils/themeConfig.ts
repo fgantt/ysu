@@ -16,20 +16,13 @@ export interface ThemesConfig {
   themes: ThemeConfig[];
 }
 
-let themesConfig: ThemesConfig | null = null;
-
 export async function loadThemesConfig(): Promise<ThemesConfig> {
-  if (themesConfig) {
-    return themesConfig;
-  }
-
   try {
     const response = await fetch('/piece-themes/themes.json', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Failed to load themes config: ${response.statusText}`);
     }
-    themesConfig = await response.json();
-    return themesConfig;
+    return await response.json() as ThemesConfig;
   } catch (error) {
     console.error('Error loading themes config:', error);
     // Return empty config as fallback

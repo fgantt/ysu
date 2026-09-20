@@ -4,6 +4,7 @@ import { parseEngineInfo } from '../utils/tauriEngine';
 import type { EngineConfig } from '../types/engine';
 import './UsiMonitor.css';
 import { loadUsiMonitorState, saveUsiMonitorState } from '../utils/persistence';
+import { listen } from '@tauri-apps/api/event';
 
 interface UsiMessage {
   id: string;
@@ -33,6 +34,9 @@ interface TauriUsiMonitorProps {
   engineNames?: Map<string, string>;  // Map from runtime ID to engine display name
   isVisible: boolean;
   onToggle: () => void;
+  onPopOut?: () => void;
+  onDock?: () => void;
+  externalWindow?: boolean;
   onSendCommand?: (engineId: string, command: string) => void;
   player1EngineId?: string | null;  // Runtime ID of player 1's engine (if any)
   player2EngineId?: string | null;  // Runtime ID of player 2's engine (if any)
@@ -46,6 +50,9 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
   engineNames,
   isVisible,
   onToggle,
+  onPopOut,
+  onDock,
+  externalWindow = false,
   onSendCommand,
   player1EngineId,
   player2EngineId,
@@ -127,6 +134,17 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
         window.removeEventListener(`usi-command-sent::${engineId}`, handler);
       });
     };
+  }, [monitoredEngineIds]);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void listen<{ engineId: string; command: string }>('usi-monitor:command-sent', ({ payload }) => {
+      if (monitoredEngineIds.includes(payload.engineId)) {
+        window.dispatchEvent(new CustomEvent(`usi-command-sent::${payload.engineId}`, { detail: { command: payload.command } }));
+      }
+    }).then(fn => { if (disposed) fn(); else unlisten = fn; });
+    return () => { disposed = true; unlisten?.(); };
   }, [monitoredEngineIds]);
 
   // Memoize callbacks to prevent unnecessary re-renders
@@ -304,11 +322,13 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
 
   return (
     <div className="usi-monitor">
-      <div className="usi-monitor-header">
+      <div className="usi-monitor-header" title={onPopOut ? 'Drag to move within the app' : undefined}>
         <h3>USI Communication Monitor</h3>
-        <button onClick={onToggle} className="close-button">
-          ×
-        </button>
+        <div className="usi-monitor-actions">
+          {onDock && <button onClick={onDock} className="usi-monitor-action" aria-label="Dock USI Monitor" title="Dock monitor beside the board"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16M17 10h2M17 14h2"/></svg></button>}
+          {onPopOut && <button onClick={onPopOut} className="usi-monitor-action" aria-label="Pop out USI Monitor" title="Pop out to a movable window"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/></svg></button>}
+          <button onClick={onToggle} className="usi-monitor-action" aria-label={externalWindow ? 'Close USI Monitor window' : 'Minimize USI Monitor'} title={externalWindow ? 'Close window' : 'Minimize'}><svg viewBox="0 0 24 24" aria-hidden="true">{externalWindow ? <path d="M5 5l14 14M19 5L5 19"/> : <path d="M5 12h14"/>}</svg></button>
+        </div>
       </div>
       
       <div className="usi-monitor-tabs">

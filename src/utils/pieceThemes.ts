@@ -40,6 +40,7 @@ export const AVAILABLE_PIECE_THEMES = [
   'Minase-1-kanji',
   'Minase-2-kanji',
   'mikurajima-moriage',
+  'mikurajima-moriage-dark',
   'Ryoko-1-kanji',
   'Ryoko-2-kanji',
 ];

@@ -12,17 +12,28 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ selectedTheme, onThemeCha
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     const loadThemes = async () => {
       try {
         const availableThemes = await getAvailablePieceThemes();
-        setThemes(availableThemes);
+        if (mounted) setThemes(availableThemes);
       } catch (error) {
         console.error('Error loading themes:', error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
-    loadThemes();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void loadThemes();
+    };
+    void loadThemes();
+    window.addEventListener('focus', loadThemes);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      mounted = false;
+      window.removeEventListener('focus', loadThemes);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
   }, []);
 
   if (loading) {

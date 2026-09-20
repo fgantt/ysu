@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
+import { UsiMonitorWindow } from './components/UsiMonitorWindow.tsx'
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
@@ -11,7 +12,7 @@ if (rootElement) {
     <StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
-          <App />
+          {window.location.pathname === '/monitor/usi' ? <UsiMonitorWindow /> : <App />}
         </BrowserRouter>
       </ErrorBoundary>
     </StrictMode>,

@@ -16,7 +16,7 @@ import './styles/themes.css';
 import './App.css';
 import './styles/shogi.css';
 import './styles/settings.css';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { PhysicalSize } from '@tauri-apps/api/dpi';
 import { loadUsiMonitorState, saveUsiMonitorState, loadWindowSize, saveWindowSize } from './utils/persistence';
@@ -168,6 +168,7 @@ function App() {
   const handleToggleUsiMonitor = () => {
     setIsUsiMonitorVisible(prev => !prev);
   };
+  const handleDismissUsiMonitor = useCallback(() => setIsUsiMonitorVisible(false), []);
 
   if (!isControllerInitialized) {
     return <div className="loading-screen">Initializing Engine...</div>;
@@ -187,6 +188,7 @@ function App() {
               communicationHistory={communicationHistory}
               sessions={sessions}
               onToggleUsiMonitor={handleToggleUsiMonitor}
+              onDismissUsiMonitor={handleDismissUsiMonitor}
               clearUsiHistory={() => {
                 setCommunicationHistory([]);
                 setLastSentCommand('');

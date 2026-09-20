@@ -4,7 +4,8 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { emitTo, listen, UnlistenFn } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { CommandResponse } from '../types/engine';
 
 /**
@@ -53,6 +54,9 @@ export async function sendUsiCommand(
     window.dispatchEvent(new CustomEvent(`usi-command-sent::${engineId}`, {
       detail: { command }
     }));
+    // Keep a popped-out monitor in sync with commands sent by the game (and vice versa).
+    const otherWindow = getCurrentWindow().label === 'main' ? 'usi-monitor' : 'main';
+    void emitTo(otherWindow, 'usi-monitor:command-sent', { engineId, command }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -395,4 +399,3 @@ export function parseEngineInfo(usiMessage: string): {
 
   return info;
 }
-
