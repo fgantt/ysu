@@ -30,6 +30,7 @@ pkg-bundler/
 *.wasm
 *.wasm.map
 *.d.ts
+!src/**/*.d.ts
 
 # Rust specific
 *.rs.bk
