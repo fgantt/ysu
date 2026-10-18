@@ -1,0 +1,38 @@
+.candidate-panel { min-height: 260px; }
+.candidate-content { padding: 12px; overflow: auto; min-height: 0; color: var(--color-text-primary); }
+.candidate-content p { font-size: 13px; color: var(--color-text-secondary); }
+.candidate-content h4 { margin: 12px 0 8px; }
+.candidate-line { display: flex; flex-direction: column; gap: 5px; width: 100%; text-align: left; padding: 10px; margin: 6px 0; border: 1px solid var(--color-border-light); border-radius: 6px; background: var(--color-bg-panel); color: var(--color-text-primary); cursor: pointer; }
+.candidate-line[aria-pressed="true"] { border-color: var(--color-accent); }
+.candidate-line span { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 12px; }
+.candidate-line small, .candidate-history { color: var(--color-text-muted); }
+.continuation-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.continuation-controls button { padding: 5px 10px; }
+.continuation-board { overflow: auto; }
+.continuation-board .shogi-board-container { zoom: .5; margin: 0 auto; }
+.continuation-hands { display: flex; gap: 8px; margin: 8px 0; }
+.continuation-hands .captured-pieces { flex: 1; min-width: 0; width: auto; padding: 6px; min-height: 42px; border: 1px solid var(--color-border-light); }
+.continuation-hands .piece { width: 32px; height: 36px; }
+.continuation-hands .pieces-list { flex-wrap: wrap; }
+.usi-monitor-window .candidate-panel { height: 100%; max-height: none; }
+
+.continuation-hands .captured-pieces h3 { font-size: 13px; padding: 3px 8px; margin: 0; }
+.continuation-hands .pieces-list { min-height: 0; }
+
+.analysis-controls { padding: 10px; border: 1px solid var(--color-border-light); border-radius: 6px; background: var(--color-bg-panel); }
+.analysis-fields { display: flex; flex-wrap: wrap; gap: 10px; }
+.analysis-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 90px; }
+.analysis-fields label:first-child { flex: 1; min-width: 180px; }
+.analysis-fields select { padding: 6px; max-width: 100%; color: var(--color-text-primary); background: var(--color-bg-card); border: 1px solid var(--color-border-medium); border-radius: 4px; }
+.analysis-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.analysis-buttons button, .continuation-pin { padding: 6px 10px; cursor: pointer; }
+.analysis-buttons button:disabled { cursor: default; }
+.continuation-pin { margin-top: 12px; }
+
+.analysis-reuse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 13px;
+}

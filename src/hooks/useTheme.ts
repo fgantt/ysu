@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
-export type Theme = 'light' | 'dark' | 'traditional' | 'ocean' | 'forest' | 'midnight' | 'sunset' | 'cyberpunk' | 'cherry' | 'monochrome' | 'sepia' | 'dynamic';
+export const COLOR_THEMES = ['dynamic', 'washi', 'jade', 'indigo', 'copper', 'plum', 'light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia'] as const;
+export type Theme = typeof COLOR_THEMES[number];
+export const NEW_COLOR_THEMES: readonly Theme[] = ['washi', 'jade', 'indigo', 'copper', 'plum'];
 
 const THEME_STORAGE_KEY = 'shogiVibeTheme';
 const DEFAULT_THEME: Theme = 'light';
@@ -43,7 +45,7 @@ export function useTheme() {
  * Type guard to check if a string is a valid Theme
  */
 function isValidTheme(value: string): value is Theme {
-  return ['light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia', 'dynamic'].includes(value);
+  return COLOR_THEMES.some(theme => theme === value);
 }
 
 /**
@@ -51,6 +53,11 @@ function isValidTheme(value: string): value is Theme {
  */
 export function getThemeDisplayName(theme: Theme): string {
   const names: Record<Theme, string> = {
+    washi: 'Washi Paper',
+    jade: 'Jade Mist',
+    indigo: 'Indigo Ink',
+    copper: 'Copper Night',
+    plum: 'Plum Silk',
     light: 'Light',
     dark: 'Dark',
     traditional: 'Traditional Wood',
@@ -72,6 +79,11 @@ export function getThemeDisplayName(theme: Theme): string {
  */
 export function getThemeDescription(theme: Theme): string {
   const descriptions: Record<Theme, string> = {
+    washi: 'Ivory paper, charcoal text, and vermilion accents',
+    jade: 'Pale jade surfaces with deep teal accents',
+    indigo: 'Inky blue panels with soft periwinkle highlights',
+    copper: 'Warm charcoal with burnished copper highlights',
+    plum: 'Soft lavender surfaces with rich plum accents',
     light: 'Clean and modern light theme',
     dark: 'High contrast dark theme',
     traditional: 'Classic wood and gold aesthetic',

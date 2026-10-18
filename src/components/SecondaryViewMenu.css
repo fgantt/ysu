@@ -1,0 +1,9 @@
+.secondary-view-menu { position: relative; }
+.secondary-view-menu button { background: var(--color-bg-panel, #20242a); color: var(--color-text-primary, white); border: 1px solid var(--color-border-light, #777); border-radius: 5px; padding: 8px 12px; cursor: pointer; }
+.secondary-view-popover { position: fixed; z-index: 2000; width: min(360px, calc(100vw - 16px)); box-sizing: border-box; background: var(--color-bg-panel, #20242a); border: 1px solid var(--color-border-light, #777); border-radius: 6px; padding: 6px; max-height: calc(100vh - 16px); overflow: auto; box-shadow: 0 5px 20px #0006; }
+.secondary-view-popover button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 24px; text-align: left; border: 0; }
+.secondary-view-popover button:hover, .secondary-view-popover button:focus-visible { outline: 2px solid var(--color-accent, #b79045); }
+.secondary-view-popover button:disabled { opacity: .5; cursor: default; }
+.secondary-view-popover kbd { white-space: nowrap; font: inherit; font-size: .85em; opacity: .8; }
+
+.secondary-view-popover button { background: transparent; color: var(--color-text-primary, white); border-radius: 4px; padding: 8px 12px; cursor: pointer; font: inherit; }

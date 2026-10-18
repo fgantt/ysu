@@ -22,20 +22,26 @@ const pieces = {
   RY: ['龍', '王'],
 };
 
+const dimensions = JSON.parse(await readFile(new URL('./shogi-piece-dimensions.json', import.meta.url), 'utf8')).pieces;
+
 const promotedPieces = new Set(['TO', 'NY', 'NK', 'NG', 'UM', 'RY']);
 
 function createSvg(code, characters, rotated, baseImageData) {
   const lacquer = promotedPieces.has(code) ? '#a31713' : '#070504';
   const rotation = rotated ? ' transform="rotate(180 50 55)"' : '';
   const [topCharacter, bottomCharacter] = characters;
+  const { width, height } = dimensions[code];
+  const scale = `translate(50 55) scale(${(width / dimensions.GY.width).toFixed(8)} ${(height / dimensions.GY.height).toFixed(8)}) translate(-50 -55)`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110" role="img" aria-label="${topCharacter}${bottomCharacter} shogi piece">
   <g${rotation}>
+    <g data-piece-width-mm="${width}" data-piece-height-mm="${height}" transform="${scale}">
     <image href="data:image/png;base64,${baseImageData}" x="1" y="0" width="98" height="110" preserveAspectRatio="none"/>
     <g fill="${lacquer}"
        text-anchor="middle" font-family="Hiragino Mincho ProN, Yu Mincho, Noto Serif CJK JP, serif" font-weight="700">
       <text x="50" y="48" font-size="34">${topCharacter}</text>
       <text x="50" y="84" font-size="34">${bottomCharacter}</text>
+    </g>
     </g>
   </g>
 </svg>

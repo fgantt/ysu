@@ -1,0 +1,25 @@
+{
+  "description": "Representative traditional face dimensions, in millimeters; promoted pieces retain the original physical piece size.",
+  "sources": [
+    "https://yougojapan.com/shogi-pieces-size-guide/",
+    "https://www.tohsin.com/koma/koma-sonota1003.html",
+    "https://tohsin.com/koma/koma-sonota325.html"
+  ],
+  "pieces": {
+    "FU": { "width": 22.5, "height": 27 },
+    "KY": { "width": 23.5, "height": 28 },
+    "KE": { "width": 25.5, "height": 29 },
+    "GI": { "width": 26.7, "height": 30 },
+    "KI": { "width": 26.7, "height": 30 },
+    "KA": { "width": 27.7, "height": 31 },
+    "HI": { "width": 27.7, "height": 31 },
+    "OU": { "width": 28.7, "height": 32 },
+    "GY": { "width": 28.7, "height": 32 },
+    "TO": { "width": 22.5, "height": 27 },
+    "NY": { "width": 23.5, "height": 28 },
+    "NK": { "width": 25.5, "height": 29 },
+    "NG": { "width": 26.7, "height": 30 },
+    "UM": { "width": 27.7, "height": 31 },
+    "RY": { "width": 27.7, "height": 31 }
+  }
+}

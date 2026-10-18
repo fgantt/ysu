@@ -29,7 +29,7 @@ const PracticePage: React.FC = () => {
     }
   ];
 
-  const handleExerciseSelect = (exerciseId) => {
+  const handleExerciseSelect = (exerciseId: string) => {
     navigate(`/practice/${exerciseId}`);
   };
 

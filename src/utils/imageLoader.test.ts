@@ -1,73 +1,27 @@
-/**
- * Tests for the imageLoader utility functions
- */
-
-import { 
-  loadImagesFromDirectory, 
-  loadWallpaperImages, 
-  loadBoardImages,
-  getFallbackWallpaperImages,
-  getFallbackBoardImages 
-} from './imageLoader';
-
+import { NEW_BOARD_BACKGROUNDS, NEW_WALLPAPERS } from '../data/backgroundArtwork';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
+import { loadBoardImages, loadWallpaperImages } from './imageLoader';
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 describe('imageLoader', () => {
-  describe('getFallbackWallpaperImages', () => {
-    it('should return an array of wallpaper image paths', () => {
-      const wallpapers = getFallbackWallpaperImages();
-      expect(Array.isArray(wallpapers)).toBe(true);
-      expect(wallpapers.length).toBeGreaterThan(0);
-      expect(wallpapers.every(path => path.startsWith('/wallpapers/'))).toBe(true);
-    });
+  beforeEach(() => vi.resetAllMocks());
+  it('discovers native board files and filters nonimages', async () => {
+    vi.mocked(invoke).mockResolvedValue(['/boards/wood.PNG', '/boards/grain.webp', '/boards/readme.txt']);
+    expect(await loadBoardImages()).toEqual([...NEW_BOARD_BACKGROUNDS, '/boards/wood.PNG', '/boards/grain.webp']);
+    expect(invoke).toHaveBeenCalledWith('list_image_files', { directory: 'boards' });
   });
-
-  describe('getFallbackBoardImages', () => {
-    it('should return an array of board image paths', () => {
-      const boards = getFallbackBoardImages();
-      expect(Array.isArray(boards)).toBe(true);
-      expect(boards.length).toBeGreaterThan(0);
-      expect(boards.every(path => path.startsWith('/boards/'))).toBe(true);
-    });
+  it('discovers native wallpapers and filters unsupported files', async () => {
+    vi.mocked(invoke).mockResolvedValue(['/wallpapers/temple.jpg', '/wallpapers/ocean.svg', '/wallpapers/notes.txt']);
+    expect(await loadWallpaperImages()).toEqual([...NEW_WALLPAPERS, '/wallpapers/temple.jpg', '/wallpapers/ocean.svg']);
+    expect(invoke).toHaveBeenCalledWith('list_image_files', { directory: 'wallpapers' });
   });
-
-  describe('loadImagesFromDirectory', () => {
-    it('should return an array for valid directory', async () => {
-      const result = await loadImagesFromDirectory('/wallpapers');
-      expect(Array.isArray(result)).toBe(true);
-    });
-
-    it('should return an array for boards directory', async () => {
-      const result = await loadImagesFromDirectory('/boards');
-      expect(Array.isArray(result)).toBe(true);
-    });
-
-    it('should handle non-existent directory gracefully', async () => {
-      const result = await loadImagesFromDirectory('/non-existent');
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(0);
-    });
+  it('deduplicates bundled artwork discovered by the native loader', async () => {
+    vi.mocked(invoke).mockResolvedValue(NEW_BOARD_BACKGROUNDS);
+    expect(await loadBoardImages()).toEqual(NEW_BOARD_BACKGROUNDS);
   });
-
-  describe('loadWallpaperImages', () => {
-    it('should return an array of wallpaper paths', async () => {
-      const wallpapers = await loadWallpaperImages();
-      expect(Array.isArray(wallpapers)).toBe(true);
-      // If dynamic loading works, we should have some images
-      // If it doesn't work, we'll get an empty array, which is also acceptable
-      if (wallpapers.length > 0) {
-        expect(wallpapers.every(path => path.startsWith('/wallpapers/'))).toBe(true);
-      }
-    });
-  });
-
-  describe('loadBoardImages', () => {
-    it('should return an array of board paths', async () => {
-      const boards = await loadBoardImages();
-      expect(Array.isArray(boards)).toBe(true);
-      // If dynamic loading works, we should have some images
-      // If it doesn't work, we'll get an empty array, which is also acceptable
-      if (boards.length > 0) {
-        expect(boards.every(path => path.startsWith('/boards/'))).toBe(true);
-      }
-    });
+  it('keeps bundled artwork available on discovery failure', async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error('Unavailable'));
+    expect(await loadBoardImages()).toEqual(NEW_BOARD_BACKGROUNDS);
+    expect(await loadWallpaperImages()).toEqual(NEW_WALLPAPERS);
   });
 });

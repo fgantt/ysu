@@ -18,7 +18,6 @@ const props: React.ComponentProps<typeof SettingsPanel> = {
   showAttackedPieces: false, onShowAttackedPiecesChange: vi.fn(),
   showPieceTooltips: true, onShowPieceTooltipsChange: vi.fn(),
   showEngineThinking: false, onShowEngineThinkingChange: vi.fn(),
-  gameLayout: 'compact', onGameLayoutChange: vi.fn(),
   soundsEnabled: false, onSoundsEnabledChange: vi.fn(),
   soundVolume: 0.5, onSoundVolumeChange: vi.fn(),
   recommendationEngineId: null, onRecommendationEngineChange: vi.fn(),
@@ -31,8 +30,8 @@ describe('SettingsPanel view state', () => {
   it('reopens on the previous tab with its section and scroll position', () => {
     const first = render(<SettingsPanel {...props} />);
     fireEvent.click(screen.getByRole('button', { name: /Backgrounds/ }));
-    fireEvent.click(screen.getByRole('heading', { name: /Board Background/ }));
-    expect(screen.queryByAltText('Board Background 1')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Board Background' }));
+    expect(screen.queryByRole('button', { name: 'Select board background: Test' })).toBeNull();
 
     const content = first.container.querySelector('.settings-tab-content') as HTMLDivElement;
     content.scrollTop = 120;
@@ -45,7 +44,30 @@ describe('SettingsPanel view state', () => {
 
     const second = render(<SettingsPanel {...props} />);
     expect(screen.getByRole('button', { name: /Backgrounds/ }).classList.contains('active')).toBe(true);
-    expect(screen.queryByAltText('Board Background 1')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Select board background: Test' })).toBeNull();
     expect((second.container.querySelector('.settings-tab-content') as HTMLDivElement).scrollTop).toBe(120);
   });
+});
+
+it('offers a persistent global transparency slider in Display and an opaque reset', () => {
+  const first = render(<SettingsPanel {...props} />);
+  fireEvent.click(first.getByRole('button', { name: /Display/ }));
+  fireEvent.change(first.getByRole('slider', { name: 'Secondary window transparency' }), { target: { value: '30' } });
+  expect(first.getByText('Transparency: 30%')).toBeTruthy();
+  first.unmount();
+  const second = render(<SettingsPanel {...props} />);
+  expect((second.getByRole('slider', { name: 'Secondary window transparency' }) as HTMLInputElement).value).toBe('30');
+  fireEvent.click(second.getByText('Restore opaque windows'));
+  expect(second.getByText('Transparency: 0%')).toBeTruthy();
+});
+
+
+it('offers the bundled artwork immediately and forwards both background selections', () => {
+  const board = vi.fn(); const wallpaper = vi.fn();
+  const view = render(<SettingsPanel {...props} onSelectBoardBackground={board} onSelectWallpaper={wallpaper} />);
+  fireEvent.click(view.getByRole('button', { name: /Backgrounds/ }));
+  fireEvent.click(view.getByRole('button', { name: 'Select board background: Ocean Tide' }));
+  fireEvent.click(view.getByRole('button', { name: 'Select wallpaper: Celestial Dragon' }));
+  expect(board).toHaveBeenCalledWith('/boards/ocean-tide.png');
+  expect(wallpaper).toHaveBeenCalledWith('/wallpapers/celestial-dragon.png');
 });

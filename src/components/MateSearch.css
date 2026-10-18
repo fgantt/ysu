@@ -1,0 +1,5 @@
+.mate-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.mate-controls label { display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
+.mate-controls select { max-width: 100%; }
+.mate-controls + button { margin-right: 8px; }
+.mate-controls ~ details textarea { display: block; width: 100%; min-height: 64px; box-sizing: border-box; }

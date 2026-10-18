@@ -43,6 +43,13 @@ export const AVAILABLE_PIECE_THEMES = [
   'mikurajima-moriage-dark',
   'Ryoko-1-kanji',
   'Ryoko-2-kanji',
+  'ivory-vermilion-kanji',
+  'midnight-lacquer-kanji',
+  'indigo-porcelain-kanji',
+  'modern-mono-kanji',
+  'learning-arrows',
+  'Hari-Seldon-1-kanji-dark',
+  'Hari-Seldon-2-kanji-dark',
 ];
 
 // Get SVG path for a piece in a specific theme
@@ -59,7 +66,8 @@ export function getSvgPathForPiece(
   }
   
   const playerPrefix = player === 'player1' ? '0' : '1';
-  return `/piece-themes/${theme}/${playerPrefix}${csaCode}.svg`;
+  const revision = theme === 'yggdrasil-runes' ? '?v=carved-oak-3' : '';
+  return `/piece-themes/${theme}/${playerPrefix}${csaCode}.svg${revision}`;
 }
 
 // Check if a theme is an SVG theme (not English/Kanji)

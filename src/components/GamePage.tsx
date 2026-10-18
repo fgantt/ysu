@@ -1,3 +1,11 @@
+import { StudyGameImportDialog } from './StudyGameImportDialog';
+import { createStudyGameRecord, type StudyGameBranch } from '../utils/studyGame';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { backgroundImageUrl } from '../data/backgroundArtwork';
+import { thinkingHistoryStore } from '../utils/thinkingHistory';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { SECONDARY_VIEW_OPEN_EVENT, SECONDARY_VIEW_TOGGLE_EVENT, toggleSecondaryView, useSecondaryViewShortcuts, type SecondaryView } from './SecondaryViewMenu';
+import { focusSecondaryPanel } from './SecondaryPanelFrame';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useShogiController } from '../context/ShogiControllerContext';
@@ -5,26 +13,31 @@ import { ImmutablePosition, Square, PieceType as TsshogiPieceType, isPromotableR
 import Board, { BoardRef } from './Board';
 import CapturedPieces from './CapturedPieces';
 import GameControls from './GameControls';
+import { MovableGameGroup } from './MovableGameGroup';
+import { gameMenuShortcut, useGameMenuShortcuts } from '../hooks/useGameMenuShortcuts';
 import RecommendationOverlay from './RecommendationOverlay';
 import SettingsPanel from './SettingsPanel';
 import MoveLog from './MoveLog';
-import ConfirmExitModal from './ConfirmExitModal';
 import PromotionModal from './PromotionModal';
 import CheckmateModal from './CheckmateModal';
 import SaveGameModal from './SaveGameModal';
 import LoadGameModal from './LoadGameModal';
+import GameGifExportDialog from './GameGifExportDialog';
 import UsiMonitor from './UsiMonitor';
 import { UsiMonitorHost } from './UsiMonitorHost';
+import { EvaluationHost } from './EvaluationHost';
+import { CandidateMovesHost } from './CandidateMovesHost';
+import { updateCandidateSearch, type CandidateSearch } from '../utils/candidateAnalysis';
+import type { EvaluationPoint } from './EvaluationGraph';
 import StartGameModal from './StartGameModal';
 import Clock from './Clock';
 import { getAvailablePieceThemes, AVAILABLE_PIECE_THEMES } from '../utils/pieceThemes';
 import { GameSettings } from '../types';
 import { loadWallpaperImages, loadBoardImages } from '../utils/imageLoader';
-import { GameFormat, GameData, generateGame } from '../utils/gameFormats';
-import { playPieceMoveSound, playCheckmateSound, playDrawSound, setSoundsEnabled, setVolume, getVolume } from '../utils/audio';
-import { sendUsiCommand, parseBestMove, parseEngineInfo, sendIsReadyAndWait } from '../utils/tauriEngine';
+import { GameFormat, GameData, generateGame, detectFormat, parseGame } from '../utils/gameFormats';
+import { playPieceMoveSound, playCheckmateSound, playDrawSound, setSoundsEnabled, setVolume } from '../utils/audio';
+import { sendUsiCommand, parseBestMove, parseEngineInfo } from '../utils/tauriEngine';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import type { CommandResponse, EngineConfig } from '../types/engine';
 import { useTauriEvents } from '../hooks/useTauriEvents';
 import './GamePage.css';
@@ -42,96 +55,6 @@ const isPiecePromoted = (pieceType: TsshogiPieceType): boolean => {
 };
 
 // Helper function to check if the game is over
-const checkGameOver = (position: ImmutablePosition): 'player1' | 'player2' | 'draw' | null => {
-  const isBlackTurn = position.sfen.includes(' b ');
-  const currentColor = isBlackTurn ? Color.BLACK : Color.WHITE;
-  
-  console.log('Checking game over for position:', position.sfen);
-  console.log('Current turn:', isBlackTurn ? 'Black' : 'White');
-  
-  // Check if current player has any legal moves
-  let hasLegalMoves = false;
-  
-  // Check for legal piece moves
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
-      const fromSquare = Square.newByXY(col, row);
-      if (!fromSquare) continue;
-      
-      const piece = position.board.at(fromSquare);
-      if (!piece || piece.color !== currentColor) continue;
-      
-      // Try all possible destination squares for this piece
-      for (let toRow = 0; toRow < 9; toRow++) {
-        for (let toCol = 0; toCol < 9; toCol++) {
-          const toSquare = Square.newByXY(toCol, toRow);
-          if (!toSquare) continue;
-          
-          const move = position.createMove(fromSquare, toSquare);
-          if (move && position.isValidMove(move)) {
-            hasLegalMoves = true;
-            console.log('Found legal move:', move);
-            break;
-          }
-        }
-        if (hasLegalMoves) break;
-      }
-      if (hasLegalMoves) break;
-    }
-    if (hasLegalMoves) break;
-  }
-  
-  // Check for legal drop moves if no piece moves found
-  if (!hasLegalMoves) {
-    const hand = position.hand(currentColor);
-    const dropPieceTypes = [
-      TsshogiPieceType.PAWN,
-      TsshogiPieceType.LANCE,
-      TsshogiPieceType.KNIGHT,
-      TsshogiPieceType.SILVER,
-      TsshogiPieceType.GOLD,
-      TsshogiPieceType.BISHOP,
-      TsshogiPieceType.ROOK
-    ];
-    
-    for (const pieceType of dropPieceTypes) {
-      if (hand.count(pieceType) > 0) {
-        // Try dropping on all empty squares
-        for (let row = 0; row < 9; row++) {
-          for (let col = 0; col < 9; col++) {
-            const toSquare = Square.newByXY(col, row);
-            if (!toSquare) continue;
-            
-            // Skip if square is occupied
-            if (position.board.at(toSquare)) continue;
-            
-            const move = position.createMove(pieceType, toSquare);
-            if (move && position.isValidMove(move)) {
-              hasLegalMoves = true;
-              console.log('Found legal drop:', move);
-              break;
-            }
-          }
-          if (hasLegalMoves) break;
-        }
-      }
-      if (hasLegalMoves) break;
-    }
-  }
-  
-  console.log('Has legal moves:', hasLegalMoves);
-  
-  if (!hasLegalMoves) {
-    // Current player has no legal moves - they lose
-    // In shogi, stalemate is also a loss for the player who can't move
-    const winner = isBlackTurn ? 'player2' : 'player1';
-    console.log('Game over! Winner:', winner);
-    return winner;
-  }
-  
-  return null;
-};
-
 interface GamePageProps {
   isUsiMonitorVisible: boolean;
   lastSentCommand: string;
@@ -178,6 +101,24 @@ const GamePage: React.FC<GamePageProps> = ({
   const controller = useShogiController();
   const [position, setPosition] = useState<ImmutablePosition | null>(null);
   const [isCompactMenuOpen, setIsCompactMenuOpen] = useState(false);
+  const [isEvaluationVisible, setIsEvaluationVisible] = useState(() => localStorage.getItem('shogi-evaluation-visible') !== 'false');
+  const [evaluationPoints, setEvaluationPoints] = useState<EvaluationPoint[]>([]);
+  const [candidateSearches, setCandidateSearches] = useState<CandidateSearch[]>([]);
+  const candidateSearchRef = useRef(new Map<string, CandidateSearch>());
+  const [isCandidatesVisible, setIsCandidatesVisible] = useState(() => localStorage.getItem('shogi-candidates-visible') !== 'false');
+  useEffect(() => { localStorage.setItem('shogi-candidates-visible', String(isCandidatesVisible)); }, [isCandidatesVisible]);
+  const handleToggleCandidates = useCallback(() => setIsCandidatesVisible(value => !value), []);
+  const handleDismissCandidates = useCallback(() => setIsCandidatesVisible(false), []);
+  const beginCandidateSearch = (engineId: string, rootSfen: string) => {
+    const search = { engineId, searchId: crypto.randomUUID(), rootSfen, complete: false, lines: [] };
+    candidateSearchRef.current.set(engineId, search);
+    thinkingHistoryStore.record(search, engineNamesRef.current.get(engineId) ?? engineId, 'game');
+    setCandidateSearches([...candidateSearchRef.current.values()]);
+  };
+  const latestEvaluationRef = useRef(new Map<string, number>());
+  useEffect(() => { localStorage.setItem('shogi-evaluation-visible', String(isEvaluationVisible)); }, [isEvaluationVisible]);
+  const handleToggleEvaluation = useCallback(() => setIsEvaluationVisible(visible => !visible), []);
+  const handleDismissEvaluation = useCallback(() => setIsEvaluationVisible(false), []);
   const [renderKey, setRenderKey] = useState(0); // Force re-render counter
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
@@ -189,10 +130,14 @@ const GamePage: React.FC<GamePageProps> = ({
   const [endgameType, setEndgameType] = useState<'checkmate' | 'resignation' | 'repetition' | 'stalemate' | 'illegal' | 'no_moves' | 'impasse' | 'timeout'>('checkmate');
   const [endgameDetails, setEndgameDetails] = useState<string | undefined>(undefined);
   const gameInitializedRef = useRef(false); // Prevent double initialization in strict mode
+  const gameStartedAtRef = useRef(new Date().toISOString());
   const componentId = useRef(`COMPONENT-${Math.random().toString(36).substr(2, 9)}`);
   
+  const mountedRef = useRef(true);
+
   // Track component lifecycle
   useEffect(() => {
+    mountedRef.current = true;
     console.log(`========================================`);
     console.log(`[${componentId.current}] GamePage MOUNTED`);
     console.log(`[${componentId.current}] gameInitializedRef.current: ${gameInitializedRef.current}`);
@@ -200,6 +145,7 @@ const GamePage: React.FC<GamePageProps> = ({
     
     return () => {
       console.log(`========================================`);
+      mountedRef.current = false;
       console.log(`[${componentId.current}] GamePage UNMOUNTING`);
       console.log(`========================================`);
     };
@@ -213,12 +159,30 @@ const GamePage: React.FC<GamePageProps> = ({
     console.trace('Stack trace:');
     setWinnerState(value);
   };
+  const [studyImport, setStudyImport] = useState<StudyGameBranch | null>(null);
+  const [studyImportError, setStudyImportError] = useState('');
+  const [studyImportBusy, setStudyImportBusy] = useState(false);
+  const [gameplayReady, setGameplayReady] = useState(false);
+  const gameplayReadyRef = useRef(false);
+  const turnSearchRef = useRef<{
+    engineId: string; rootSfen: string; generation: number;
+    kind: 'move' | 'recommendation'; cancelled: boolean;
+  } | null>(null);
+  const playingMessagesSuspended = useRef(false);
+  const playingGenerationRef = useRef(0);
+  const playingGeneration = playingGenerationRef.current;
+  const studyImportInFlight = useRef(false);
+  const studyEnginesToStop = useRef<string[] | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+  const [isGifExportOpen, setIsGifExportOpen] = useState(false);
   const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
   const [isExitConfirmModalOpen, setIsExitConfirmModalOpen] = useState(false);
   const [savedGames, setSavedGames] = useState<{[key: string]: string}>({});
+  const [savedReplayMetadata, setSavedReplayMetadata] = useState<{
+    [key: string]: Pick<GameData, 'appearance' | 'clockSnapshots'>;
+  }>({});
   const [isInCheck, setIsInCheck] = useState(false);
   const [kingInCheckSquare, setKingInCheckSquare] = useState<Square | null>(null);
   const [attackingPieces, setAttackingPieces] = useState<Square[]>([]);
@@ -229,6 +193,8 @@ const GamePage: React.FC<GamePageProps> = ({
   const [isByoyomiBlack, setIsByoyomiBlack] = useState(false);
   const [isByoyomiWhite, setIsByoyomiWhite] = useState(false);
   const [moves, setMoves] = useState<any[]>([]);
+  const clockSnapshotsRef = useRef<NonNullable<GameData['clockSnapshots']>>([]);
+  const lastClockSnapshotPlyRef = useRef(0);
   
   // Player type state (used for UI display and controller communication)
   const [player1Type, setPlayer1Type] = useState<'human' | 'ai'>('human');
@@ -275,7 +241,7 @@ const GamePage: React.FC<GamePageProps> = ({
       localStorage.removeItem('shogi-recommendation-engine-options');
     }
   }, [recommendationEngineOptions]);
-  const [isRequestingRecommendation, setIsRequestingRecommendation] = useState(false);
+  const [, setIsRequestingRecommendation] = useState(false);
   const [highlightedCapturedPiece, setHighlightedCapturedPiece] = useState<string | null>(null);
   
   // Recommendation engine settings
@@ -288,6 +254,38 @@ const GamePage: React.FC<GamePageProps> = ({
   const [activeEngineIds, setActiveEngineIds] = useState<string[]>([]);
   const [availableEngines, setAvailableEngines] = useState<EngineConfig[]>([]);
   const [engineNames, setEngineNames] = useState<Map<string, string>>(new Map());
+  const liveTurnRef = useRef({ player1EngineId, player2EngineId, player1Type, player2Type, recommendationsEnabled, winner });
+  liveTurnRef.current = { player1EngineId, player2EngineId, player1Type, player2Type, recommendationsEnabled, winner };
+
+  const searchStillOwnsTurn = (search: NonNullable<typeof turnSearchRef.current>) => {
+    const live = liveTurnRef.current;
+    if (!mountedRef.current || !gameplayReadyRef.current || playingMessagesSuspended.current || live.winner || search.cancelled ||
+        search.generation !== playingGenerationRef.current || controller.getPosition().sfen !== search.rootSfen) return false;
+    const black = search.rootSfen.split(' ')[1] === 'b';
+    const engineId = black ? live.player1EngineId : live.player2EngineId;
+    const type = black ? live.player1Type : live.player2Type;
+    return engineId === search.engineId && (search.kind === 'move' ? type === 'ai' : type === 'human' && live.recommendationsEnabled);
+  };
+
+  // USI bestmove has no request ID. Keep ownership until its terminal response,
+  // including after stop, so a late result cannot be applied to a newer search.
+  const acceptSearchMessage = (engineId: string, message: string) => {
+    if (!message.startsWith('info ') && !message.startsWith('bestmove')) return true;
+    const search = turnSearchRef.current;
+    if (!search || search.engineId !== engineId) return false;
+    const accepted = searchStillOwnsTurn(search);
+    if (message.startsWith('bestmove')) {
+      turnSearchRef.current = null;
+      if (!accepted) setRenderKey(value => value + 1);
+    }
+    return accepted;
+  };
+
+  const engineNamesRef = useRef(engineNames);
+  engineNamesRef.current = engineNames;
+  useEffect(() => () => {
+    for (const search of candidateSearchRef.current.values()) if (!search.complete) thinkingHistoryStore.record(search, engineNamesRef.current.get(search.engineId) ?? search.engineId, 'game', 'stopped');
+  }, []);
   
   // Engine thinking state - track the current thinking move (first PV) for each engine
   const [thinkingMovePlayer1, setThinkingMovePlayer1] = useState<string | null>(null);
@@ -304,7 +302,6 @@ const GamePage: React.FC<GamePageProps> = ({
   
   // Refs for board containers to get actual dimensions
   const compactBoardRef = useRef<HTMLDivElement | null>(null);
-  const classicBoardRef = useRef<HTMLDivElement | null>(null);
   const boardComponentRef = useRef<BoardRef | null>(null);
   
   
@@ -328,10 +325,13 @@ const GamePage: React.FC<GamePageProps> = ({
   useEffect(() => {
     const games = JSON.parse(localStorage.getItem('shogi-saved-games') || '{}');
     setSavedGames(games);
+    const replayMetadata = JSON.parse(localStorage.getItem('shogi-saved-game-replay-metadata') || '{}');
+    setSavedReplayMetadata(replayMetadata);
   }, []);
 
   // Handle navigation state from HomePage
   useEffect(() => {
+    const initializationGeneration = playingGenerationRef.current;
     console.log(`[${componentId.current}] Navigation effect triggered`);
     console.log(`[${componentId.current}] gameInitializedRef.current: ${gameInitializedRef.current}`);
     
@@ -386,14 +386,17 @@ const GamePage: React.FC<GamePageProps> = ({
         setBlackTime(minutesPerSide * 60 * 1000);
         setWhiteTime(minutesPerSide * 60 * 1000);
         setByoyomi(byoyomiInSeconds * 1000);
+        clockSnapshotsRef.current = [{
+          blackTime: minutesPerSide * 60 * 1000,
+          whiteTime: minutesPerSide * 60 * 1000,
+          isByoyomiBlack: false,
+          isByoyomiWhite: false,
+        }];
+        lastClockSnapshotPlyRef.current = 0;
         
         // Update local state
         setPlayer1Type(player1Type);
         setPlayer2Type(player2Type);
-        setPlayer1Level(player1Level);
-        setPlayer2Level(player2Level);
-        setMinutesPerSide(minutesPerSide);
-        setByoyomiInSeconds(byoyomiInSeconds);
         
         // Set other settings from navigation state
         if (stateShowAttackedPieces !== undefined) {
@@ -421,6 +424,7 @@ const GamePage: React.FC<GamePageProps> = ({
 
         // CRITICAL: Set the ref BEFORE async operations to prevent React Strict Mode double-initialization
         gameInitializedRef.current = true;
+        gameStartedAtRef.current = new Date().toISOString();
         
         // Initialize Tauri engines if any player is AI or if we have recommendation engine settings
         const needsTauriEngine = player1Type === 'ai' || player2Type === 'ai' || (player1Type === 'human' && player2Type === 'human');
@@ -434,6 +438,7 @@ const GamePage: React.FC<GamePageProps> = ({
           
           // Get engines and auto-assign built-in if not specified
           invoke<CommandResponse<EngineConfig[]>>('get_engines').then(async response => {
+            if (initializationGeneration !== playingGenerationRef.current) return;
             if (response.success && response.data && response.data.length > 0) {
               const builtinEngine = response.data.find(e => e.is_builtin);
               const defaultEngine = builtinEngine || response.data[0];
@@ -463,8 +468,6 @@ const GamePage: React.FC<GamePageProps> = ({
               await initializeTauriEngines({
                 player1Type,
                 player2Type,
-                player1Level,
-                player2Level,
                 player1EngineId: engine1,
                 player2EngineId: engine2,
                 minutesPerSide,
@@ -473,10 +476,14 @@ const GamePage: React.FC<GamePageProps> = ({
                 initialSfen: stateInitialSfen
               });
               
+              if (initializationGeneration !== playingGenerationRef.current) return;
               console.log('[Navigation Init] Engines initialized, starting game...');
               
               // THEN start the game - this will trigger the AI effect with engines ready
               return controller.newGame(stateInitialSfen).then(() => {
+                if (initializationGeneration !== playingGenerationRef.current) return;
+                gameplayReadyRef.current = true;
+                setGameplayReady(true);
                 console.log(`[${componentId.current}] Game initialized successfully`);
               });
             }
@@ -491,6 +498,9 @@ const GamePage: React.FC<GamePageProps> = ({
           // No Tauri engines needed, start game immediately
           console.log(`[${componentId.current}] Starting game without Tauri engines`);
           controller.newGame(stateInitialSfen).then(() => {
+            if (initializationGeneration !== playingGenerationRef.current) return;
+            gameplayReadyRef.current = true;
+            setGameplayReady(true);
             console.log(`[${componentId.current}] Game initialized successfully`);
           }).catch(error => {
             console.error(`[${componentId.current}] Failed to start new game:`, error);
@@ -520,7 +530,6 @@ const GamePage: React.FC<GamePageProps> = ({
   const [boardBackground, setBoardBackground] = useState(localStorage.getItem('shogi-board-background') || '');
   const [wallpaperList, setWallpaperList] = useState<string[]>([]);
   const [boardBackgroundList, setBoardBackgroundList] = useState<string[]>([]);
-  const [gameLayout, setGameLayout] = useState<'classic' | 'compact'>((localStorage.getItem('shogi-game-layout') as 'classic' | 'compact') || 'compact');
   const [pieceThemeList, setPieceThemeList] = useState<string[]>(['kanji', 'english', ...AVAILABLE_PIECE_THEMES]);
 
   // Sync sound settings with audio manager
@@ -755,6 +764,28 @@ const GamePage: React.FC<GamePageProps> = ({
     }
   }, [moves, position, isByoyomiBlack, isByoyomiWhite, byoyomi]);
 
+  // Capture one clock state per ply for optional playback in exported GIFs.
+  // Depending only on the move record avoids recording every timer tick.
+  useEffect(() => {
+    const ply = moves.filter(move => {
+      if ('move' in move && typeof move.move === 'object' && 'type' in move.move) {
+        return move.move.type !== 'start';
+      }
+      return true;
+    }).length;
+
+    if (ply > lastClockSnapshotPlyRef.current) {
+      const isBlackTurn = position?.sfen.includes(' b ');
+      clockSnapshotsRef.current[ply] = {
+        blackTime: !isBlackTurn && isByoyomiBlack ? byoyomi : blackTime,
+        whiteTime: isBlackTurn && isByoyomiWhite ? byoyomi : whiteTime,
+        isByoyomiBlack,
+        isByoyomiWhite,
+      };
+      lastClockSnapshotPlyRef.current = ply;
+    }
+  }, [moves]);
+
   // Update controller with current clock times
   useEffect(() => {
     if (controller.isInitialized()) {
@@ -765,7 +796,7 @@ const GamePage: React.FC<GamePageProps> = ({
   // Apply wallpaper to document body when wallpaper changes
   useEffect(() => {
     if (wallpaper) {
-      document.body.style.backgroundImage = `url('${wallpaper}')`;
+      document.body.style.backgroundImage = `url('${backgroundImageUrl(wallpaper)}')`;
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundRepeat = 'no-repeat';
       document.body.style.backgroundPosition = 'center center';
@@ -1143,21 +1174,28 @@ const GamePage: React.FC<GamePageProps> = ({
     setIsStartGameModalOpen(true);
   };
 
-  const [player1Level, setPlayer1Level] = useState(5);
-  const [player2Level, setPlayer2Level] = useState(5);
-  const [minutesPerSide, setMinutesPerSide] = useState(30);
-  const [byoyomiInSeconds, setByoyomiInSeconds] = useState(10);
 
   const handleStartGame = async (settings: GameSettings) => {
+    playingGenerationRef.current++;
+    const startGeneration = playingGenerationRef.current;
+    playingMessagesSuspended.current = true;
+    gameplayReadyRef.current = false;
+    setGameplayReady(false);
+    turnSearchRef.current = null;
+    const previousEngines = [...activeEngineIds];
+    setPlayer1EngineId(null);
+    setPlayer2EngineId(null);
+    setActiveEngineIds([]);
+    await Promise.allSettled(previousEngines.map(engineId => invoke('stop_engine', { engineId })));
+    if (startGeneration !== playingGenerationRef.current) return;
     console.log('[handleStartGame] Called with settings:', settings);
+    gameStartedAtRef.current = new Date().toISOString();
     clearUsiHistory();
+    latestEvaluationRef.current.clear();
+    setEvaluationPoints([]);
     gameInitializedRef.current = true; // Mark as initialized to prevent navigation override
     setPlayer1Type(settings.player1Type);
     setPlayer2Type(settings.player2Type);
-    setPlayer1Level(settings.player1Level);
-    setPlayer2Level(settings.player2Level);
-    setMinutesPerSide(settings.minutesPerSide);
-    setByoyomiInSeconds(settings.byoyomiInSeconds);
     
     // Check if we need to use Tauri engines (any AI player selected, or human vs human for recommendations)
     const needsTauriEngine = settings.player1Type === 'ai' || settings.player2Type === 'ai' || (settings.player1Type === 'human' && settings.player2Type === 'human');
@@ -1199,6 +1237,8 @@ const GamePage: React.FC<GamePageProps> = ({
         console.error('Failed to load engines for auto-selection:', error);
       }
       
+      if (startGeneration !== playingGenerationRef.current) return;
+
       // Update settings with auto-selected engines
       const updatedSettings = {
         ...settings,
@@ -1208,8 +1248,8 @@ const GamePage: React.FC<GamePageProps> = ({
       };
       
       setUseTauriEngine(true);
-      setPlayer1EngineId(player1Engine);
-      setPlayer2EngineId(player2Engine);
+      setPlayer1EngineId(player1Engine ?? null);
+      setPlayer2EngineId(player2Engine ?? null);
       
       console.log('[handleStartGame] Using engines:', {
         player1Engine,
@@ -1233,14 +1273,23 @@ const GamePage: React.FC<GamePageProps> = ({
       controller.setDisableAutoEngineMove(false);
     }
     
+    if (startGeneration !== playingGenerationRef.current) return;
+
     // Player types already set above based on mode
-    controller.setAILevels(settings.player1Level, settings.player2Level);
+    controller.setAILevels(5, 5);
     controller.setTimeControls(settings.minutesPerSide * 60 * 1000, settings.minutesPerSide * 60 * 1000, settings.byoyomiInSeconds * 1000);
     setBlackTime(settings.minutesPerSide * 60 * 1000);
     setWhiteTime(settings.minutesPerSide * 60 * 1000);
     setByoyomi(settings.byoyomiInSeconds * 1000);
     setIsByoyomiBlack(false);
     setIsByoyomiWhite(false);
+    clockSnapshotsRef.current = [{
+      blackTime: settings.minutesPerSide * 60 * 1000,
+      whiteTime: settings.minutesPerSide * 60 * 1000,
+      isByoyomiBlack: false,
+      isByoyomiWhite: false,
+    }];
+    lastClockSnapshotPlyRef.current = 0;
     
     // Determine start color from SFEN
     if (settings.initialSfen) {
@@ -1250,7 +1299,15 @@ const GamePage: React.FC<GamePageProps> = ({
       setStartColor('black');
     }
 
-    controller.newGame(settings.initialSfen).catch(error => {
+    for (const search of candidateSearchRef.current.values()) if (!search.complete) thinkingHistoryStore.record(search, engineNamesRef.current.get(search.engineId) ?? search.engineId, 'game', 'stopped');
+    candidateSearchRef.current.clear();
+    setCandidateSearches([]);
+    await controller.newGame(settings.initialSfen).then(() => {
+      if (startGeneration !== playingGenerationRef.current) return;
+      playingMessagesSuspended.current = false;
+      gameplayReadyRef.current = true;
+      setGameplayReady(true);
+    }).catch(error => {
       console.error('Failed to start new game:', error);
     });
     setWinner(null);
@@ -1260,6 +1317,8 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // Initialize Tauri engines when game starts with Tauri engine settings
   const initializeTauriEngines = async (settings: GameSettings) => {
+    const initializationGeneration = playingGenerationRef.current;
+    const isStale = () => !mountedRef.current || initializationGeneration !== playingGenerationRef.current;
     console.log('[initializeTauriEngines] Starting with settings:', settings);
     const engineIds: string[] = [];
     const names = new Map<string, string>();
@@ -1276,6 +1335,8 @@ const GamePage: React.FC<GamePageProps> = ({
         console.error('[initializeTauriEngines] Failed to load engines:', response);
         return;
       }
+
+      if (isStale()) return;
 
       // Store engines for display name lookup in USI monitor
       setAvailableEngines(response.data);
@@ -1343,7 +1404,7 @@ const GamePage: React.FC<GamePageProps> = ({
         }
       }
       
-      if (player2EngineId) {
+      if (!isStale() && player2EngineId) {
         console.log('[initializeTauriEngines] Player 2 engine (AI or recommendation):', player2EngineId);
         const engine = response.data.find(e => e.id === player2EngineId);
         console.log('[initializeTauriEngines] Player 2 engine found:', engine);
@@ -1380,6 +1441,10 @@ const GamePage: React.FC<GamePageProps> = ({
         }
       }
 
+      if (isStale()) {
+        await Promise.allSettled(engineIds.map(engineId => invoke('stop_engine', { engineId })));
+        return;
+      }
       setActiveEngineIds(engineIds);
       setEngineNames(names);
       // Update the player engine IDs with runtime IDs so AI move logic uses correct IDs
@@ -1397,9 +1462,44 @@ const GamePage: React.FC<GamePageProps> = ({
   };
 
   // Memoize event handlers to prevent duplicate listeners
+  const captureEvaluationMessage = useCallback((engineId: string, message: string) => {
+    const search = candidateSearchRef.current.get(engineId);
+    if (search) {
+      const updated = updateCandidateSearch(search, message);
+      if (updated !== search) {
+        candidateSearchRef.current.set(engineId, updated);
+        thinkingHistoryStore.record(updated, engineNamesRef.current.get(engineId) ?? engineId, 'game');
+        setCandidateSearches([...candidateSearchRef.current.values()]);
+      }
+    }
+    if (message.startsWith('info ')) {
+      const info = parseEngineInfo(message);
+      if (info.score !== undefined && (info.multipv === undefined || info.multipv === 1)) {
+        const senteScore = engineId === player2EngineId ? -info.score : info.score;
+        latestEvaluationRef.current.set(engineId, senteScore);
+      }
+      return;
+    }
+    if (!message.startsWith('bestmove')) return;
+    const score = latestEvaluationRef.current.get(engineId);
+    if (score === undefined) return;
+    latestEvaluationRef.current.delete(engineId);
+    const ply = controller.getRecord().moves.filter(entry => {
+      const move = (entry as any).move;
+      return !(move && typeof move === 'object' && move.type === 'start');
+    }).length;
+    setEvaluationPoints(current => {
+      const withoutSamePly = current.filter(point => point.ply !== ply);
+      return [...withoutSamePly, { ply, score, engineId }].sort((a, b) => a.ply - b.ply);
+    });
+  }, [controller, player2EngineId]);
+
   const handlePlayer1UsiMessage = useCallback((engineId: string, message: string) => {
+    if (playingMessagesSuspended.current || playingGeneration !== playingGenerationRef.current) return;
+    if (!acceptSearchMessage(engineId, message)) return;
     // Log all USI messages from engine
     console.log(`[USI Engine ${engineId}] Received: ${message}`);
+    captureEvaluationMessage(engineId, message);
     
     if (message.startsWith('bestmove')) {
       const { move } = parseBestMove(message);
@@ -1408,8 +1508,9 @@ const GamePage: React.FC<GamePageProps> = ({
       setThinkingMovePlayer1(null);
       
       // Only apply moves if it's an AI player's turn
-      const isBlackTurn = position?.sfen.includes(' b ');
-      const isAITurn = isBlackTurn ? player1Type === 'ai' : player2Type === 'ai';
+      const isBlackTurn = controller.getPosition().sfen.split(' ')[1] === 'b';
+      const live = liveTurnRef.current;
+      const isAITurn = isBlackTurn ? live.player1Type === 'ai' : live.player2Type === 'ai';
       
       if (move && move !== 'resign' && isAITurn) {
         // Log position state before applying move for debugging
@@ -1453,10 +1554,12 @@ const GamePage: React.FC<GamePageProps> = ({
     } else if (message.startsWith('option ')) {
       console.log(`[USI Engine ${engineId}] Engine option: ${message}`);
     }
-  }, [position, player1Type, player2Type, controller, recommendationsEnabled, parseRecommendationMove]);
+  }, [position, player1Type, player2Type, controller, recommendationsEnabled, parseRecommendationMove, captureEvaluationMessage]);
 
   const handlePlayer1UsiError = useCallback((engineId: string, error: string) => {
     console.error(`Tauri engine ${engineId} error: ${error}`);
+    const search = candidateSearchRef.current.get(engineId);
+    if (search && !search.complete && error === 'Engine process died') thinkingHistoryStore.record(search, engineNamesRef.current.get(engineId) ?? engineId, 'game', 'error');
   }, []);
 
   // Listen to Tauri engine events
@@ -1467,8 +1570,11 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // Memoize event handlers for second engine
   const handlePlayer2UsiMessage = useCallback((engineId: string, message: string) => {
+    if (playingMessagesSuspended.current || playingGeneration !== playingGenerationRef.current) return;
+    if (!acceptSearchMessage(engineId, message)) return;
     // Log all USI messages from engine
     console.log(`[USI Engine ${engineId}] Received: ${message}`);
+    captureEvaluationMessage(engineId, message);
     
     if (message.startsWith('bestmove')) {
       const { move } = parseBestMove(message);
@@ -1477,8 +1583,9 @@ const GamePage: React.FC<GamePageProps> = ({
       setThinkingMovePlayer2(null);
       
       // Only apply moves if it's an AI player's turn
-      const isBlackTurn = position?.sfen.includes(' b ');
-      const isAITurn = isBlackTurn ? player1Type === 'ai' : player2Type === 'ai';
+      const isBlackTurn = controller.getPosition().sfen.split(' ')[1] === 'b';
+      const live = liveTurnRef.current;
+      const isAITurn = isBlackTurn ? live.player1Type === 'ai' : live.player2Type === 'ai';
       
       if (move && move !== 'resign' && isAITurn) {
         // Log position state before applying move for debugging
@@ -1522,10 +1629,12 @@ const GamePage: React.FC<GamePageProps> = ({
     } else if (message.startsWith('option ')) {
       console.log(`[USI Engine ${engineId}] Engine option: ${message}`);
     }
-  }, [position, player1Type, player2Type, controller, recommendationsEnabled, parseRecommendationMove]);
+  }, [position, player1Type, player2Type, controller, recommendationsEnabled, parseRecommendationMove, captureEvaluationMessage]);
 
   const handlePlayer2UsiError = useCallback((engineId: string, error: string) => {
     console.error(`Tauri engine ${engineId} error: ${error}`);
+    const search = candidateSearchRef.current.get(engineId);
+    if (search && !search.complete && error === 'Engine process died') thinkingHistoryStore.record(search, engineNamesRef.current.get(engineId) ?? engineId, 'game', 'error');
   }, []);
 
   // Listen to second engine if both players are AI
@@ -1535,115 +1644,60 @@ const GamePage: React.FC<GamePageProps> = ({
   });
 
 
-  // Request move from Tauri engine
-  const requestTauriEngineMove = async (engineId: string) => {
-    console.log('[requestTauriEngineMove] Called with engineId:', engineId);
-    
-    if (!engineId || !position) {
-      console.log('[requestTauriEngineMove] Early return:', { hasEngineId: !!engineId, hasPosition: !!position });
-      return;
+  const requestTurnSearch = async (engineId: string, kind: 'move' | 'recommendation') => {
+    const search = { engineId, rootSfen: controller.getPosition().sfen,
+      generation: playingGenerationRef.current, kind, cancelled: false };
+    if (!searchStillOwnsTurn(search)) return;
+    const previous = turnSearchRef.current;
+    if (previous) {
+      if (searchStillOwnsTurn(previous)) return;
+      if (!previous.cancelled) {
+        previous.cancelled = true;
+        await sendUsiCommand(previous.engineId, 'stop');
+      }
+      return; // Drain its bestmove before allowing another search.
     }
-
+    turnSearchRef.current = search;
     try {
-      const currentSfen = position.sfen;
-      
-      // CRITICAL: The SFEN from position.sfen already represents the current position
-      // We should NOT send moves again, as that would double-apply them
-      // Just send the current SFEN directly
-      const posCmd = `position sfen ${currentSfen}`;
-      console.log('[requestTauriEngineMove] Sending position command:', posCmd);
-      console.log('[requestTauriEngineMove] Current SFEN (should be current position):', currentSfen);
-      await sendUsiCommand(engineId, posCmd);
-
-      // Send go command
-      const goCmd = `go btime ${blackTime} wtime ${whiteTime} byoyomi ${byoyomi}`;
-      console.log('[requestTauriEngineMove] Sending go command:', goCmd);
-      await sendUsiCommand(engineId, goCmd);
-      console.log('[requestTauriEngineMove] Commands sent successfully');
+      const positioned = await sendUsiCommand(engineId, `position sfen ${search.rootSfen}`);
+      if (!positioned.success) throw new Error(positioned.error ?? 'Engine rejected the position');
+      if (turnSearchRef.current !== search || !searchStillOwnsTurn(search)) {
+        if (turnSearchRef.current === search) turnSearchRef.current = null;
+        return;
+      }
+      beginCandidateSearch(engineId, search.rootSfen);
+      const go = kind === 'move'
+        ? `go btime ${blackTime} wtime ${whiteTime} byoyomi ${byoyomi}`
+        : 'go movetime 5000';
+      const started = await sendUsiCommand(engineId, go);
+      if (!started.success) throw new Error(started.error ?? 'Engine failed to start searching');
     } catch (error) {
-      console.error('[requestTauriEngineMove] Error:', error);
+      if (turnSearchRef.current === search) turnSearchRef.current = null;
+      console.error('[requestTurnSearch] Error:', error);
     }
   };
 
-  // Request recommendation from Tauri engine
-  const requestRecommendationFromEngine = async (engineId: string) => {
-    console.log('[requestRecommendationFromEngine] Called with engineId:', engineId);
-    
-    if (!engineId || !position) {
-      console.log('[requestRecommendationFromEngine] Early return:', { hasEngineId: !!engineId, hasPosition: !!position });
-      return;
-    }
-
-    try {
-      const currentSfen = position.sfen;
-      
-      // CRITICAL: The SFEN from position.sfen already represents the current position
-      // We should NOT send moves again, as that would double-apply them
-      // Just send the current SFEN directly
-      const posCmd = `position sfen ${currentSfen}`;
-      console.log('[requestRecommendationFromEngine] Sending position command:', posCmd);
-      console.log('[requestRecommendationFromEngine] Current SFEN (should be current position):', currentSfen);
-      await sendUsiCommand(engineId, posCmd);
-
-      // Send go command with shorter time for recommendations
-      const goCmd = `go movetime 5000`;
-      console.log('[requestRecommendationFromEngine] Sending go command:', goCmd);
-      await sendUsiCommand(engineId, goCmd);
-      console.log('[requestRecommendationFromEngine] Commands sent successfully');
-    } catch (error) {
-      console.error('[requestRecommendationFromEngine] Error:', error);
-    }
-  };
-
-  // Effect to request Tauri engine moves when it's AI's turn
+  // Wait for both runtime IDs and the final starting position. Every delayed
+  // request is cancelled on a turn/settings change and revalidated before go.
   useEffect(() => {
-    console.log('[GamePage AI Effect] Triggered', { 
-      useTauriEngine, 
-      hasPosition: !!position, 
-      winner,
-      player1EngineId,
-      player2EngineId 
-    });
-    
-    if (!useTauriEngine || !position || winner) {
-      console.log('[GamePage AI Effect] Early return:', { useTauriEngine, hasPosition: !!position, winner });
-      return;
+    const previous = turnSearchRef.current;
+    if (previous && !previous.cancelled && !searchStillOwnsTurn(previous)) {
+      previous.cancelled = true;
+      void sendUsiCommand(previous.engineId, 'stop');
     }
-
-    const isBlackTurn = position.sfen.includes(' b ');
-    const currentEngineId = isBlackTurn ? player1EngineId : player2EngineId;
-    const isAITurn = controller.isCurrentPlayerAI();
-    
-    console.log('[GamePage AI Effect] Checking AI turn:', { 
-      isBlackTurn, 
-      currentEngineId, 
-      isAITurn,
-      player1Type,
-      player2Type,
-      recommendationsEnabled,
-      activeEngineIds
-    });
-    
-    if (currentEngineId && isAITurn) {
-      console.log('[GamePage AI Effect] Requesting AI move from engine:', currentEngineId);
-      // Small delay to allow UI to update
-      setTimeout(() => {
-        requestTauriEngineMove(currentEngineId);
-      }, 500);
-    } else if (currentEngineId && !isAITurn && recommendationsEnabled) {
-      // Request recommendation for human player when hints are enabled
-      console.log('[GamePage AI Effect] Requesting recommendation from engine:', currentEngineId);
-      setTimeout(() => {
-        requestRecommendationFromEngine(currentEngineId);
-      }, 500);
-    } else {
-      console.log('[GamePage AI Effect] Not requesting move:', { 
-        hasEngineId: !!currentEngineId, 
-        isAITurn,
-        recommendationsEnabled
-      });
-    }
-  }, [position, renderKey, useTauriEngine, player1EngineId, player2EngineId, winner, player1Type, player2Type, recommendationsEnabled]);
+    if (!gameplayReady || !useTauriEngine || !position || winner || playingMessagesSuspended.current) return;
+    const black = position.sfen.split(' ')[1] === 'b';
+    const engineId = black ? player1EngineId : player2EngineId;
+    const type = black ? player1Type : player2Type;
+    if (!engineId || (type !== 'ai' && !recommendationsEnabled)) return;
+    const generation = playingGenerationRef.current;
+    const rootSfen = position.sfen;
+    const timer = setTimeout(() => {
+      if (generation !== playingGenerationRef.current || controller.getPosition().sfen !== rootSfen) return;
+      void requestTurnSearch(engineId, type === 'ai' ? 'move' : 'recommendation');
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [gameplayReady, position, renderKey, useTauriEngine, player1EngineId, player2EngineId, winner, player1Type, player2Type, recommendationsEnabled]);
 
   // Cleanup Tauri engines on unmount
   useEffect(() => {
@@ -1709,18 +1763,15 @@ const GamePage: React.FC<GamePageProps> = ({
     handleSettingChange(setBoardBackground, 'shogi-board-background')(nextBackground);
   };
 
+  const handleOpenGifExport = () => {
+    setIsCompactMenuOpen(false);
+    setIsGifExportOpen(true);
+  };
+
   const handleSaveGame = (name: string, format: GameFormat) => {
-    const position = controller.getPosition();
     const gameData: GameData = {
-      position: position.sfen,
-      moves: [], // TODO: Extract move history from controller
-      metadata: {
-        name,
-        date: new Date().toISOString(),
-        player1Name: 'Player 1',
-        player2Name: 'Player 2',
-        result: 'ongoing'
-      }
+      ...currentGameData,
+      metadata: { ...currentGameData.metadata, name },
     };
 
     // Save in the specified format
@@ -1728,33 +1779,45 @@ const GamePage: React.FC<GamePageProps> = ({
     const newSavedGames = { ...savedGames, [name]: gameText };
     setSavedGames(newSavedGames);
     localStorage.setItem('shogi-saved-games', JSON.stringify(newSavedGames));
+    const newReplayMetadata = {
+      ...savedReplayMetadata,
+      [name]: {
+        appearance: gameData.appearance,
+        clockSnapshots: gameData.clockSnapshots,
+      },
+    };
+    setSavedReplayMetadata(newReplayMetadata);
+    localStorage.setItem('shogi-saved-game-replay-metadata', JSON.stringify(newReplayMetadata));
     setIsSaveModalOpen(false);
   };
 
   const handleLoadGame = (name: string, _format: GameFormat) => {
     const gameText = savedGames[name];
     if (gameText) {
-      // For now, assume it's SFEN format for backward compatibility
-      const sfen = gameText.includes('/') && (gameText.includes(' b ') || gameText.includes(' w ')) 
-        ? gameText 
-        : gameText; // Assume it's already SFEN
-      
-      const turn = sfen.split(' ')[1];
-      setStartColor(turn === 'w' ? 'white' : 'black');
-      controller.loadSfen(sfen).catch(error => {
-        console.error('Failed to load game:', error);
-      });
+      const format = detectFormat(gameText);
+      const parsed = format ? parseGame(gameText, format) : null;
+      if (parsed?.success && parsed.data) {
+        void handleLoadFromText(parsed.data);
+      } else {
+        console.error('Failed to load saved game:', parsed?.error || 'Unknown saved game format');
+      }
     }
     setIsLoadModalOpen(false);
   };
 
   const handleLoadFromText = async (gameData: GameData) => {
     try {
+      gameStartedAtRef.current = gameData.metadata.date || new Date().toISOString();
+      clockSnapshotsRef.current = gameData.clockSnapshots ? [...gameData.clockSnapshots] : [];
+      lastClockSnapshotPlyRef.current = gameData.clockSnapshots
+        ? Math.max(0, gameData.clockSnapshots.length - 1)
+        : 0;
       const turn = gameData.position.split(' ')[1];
       setStartColor(turn === 'w' ? 'white' : 'black');
       
       // Load the position first
       await controller.loadSfen(gameData.position);
+      controller.getRecord().current.comment = gameData.metadata.comments?.[0] ?? '';
       
       // Apply all moves from the move history
       if (gameData.moves && gameData.moves.length > 0) {
@@ -1764,6 +1827,7 @@ const GamePage: React.FC<GamePageProps> = ({
           if (move !== 'resign') {
             console.log(`Applying move ${i + 1}: ${move}`);
             const success = controller.handleUserMove(move);
+            if (success) controller.getRecord().current.comment = gameData.metadata.comments?.[i + 1] ?? '';
             if (!success) {
               console.warn(`Failed to apply move ${i + 1}: ${move}`);
               console.warn(`Current position SFEN: ${controller.getPosition().sfen}`);
@@ -1781,29 +1845,107 @@ const GamePage: React.FC<GamePageProps> = ({
 
   // Memoize game data to prevent excessive re-renders
   const currentGameData = useMemo((): GameData => {
-    const position = controller.getPosition();
     const record = controller.getRecord();
+    const playerName = (isSente: boolean) => {
+      const type = isSente ? player1Type : player2Type;
+      const runtimeId = isSente ? player1EngineId : player2EngineId;
+      if (type === 'human') return 'You';
+      return runtimeId ? (engineNames.get(runtimeId) || 'Engine') : 'Engine';
+    };
     
     // Extract USI moves - based on how MoveLog component accesses them
     const moves = record.moves.map((m: any) => m.move?.usi || '').filter(Boolean);
     
     return {
-      position: position.sfen,
+      position: record.initialPosition?.sfen ?? record.first?.sfen ?? controller.getPosition().sfen,
       moves: moves,
       metadata: {
-        date: new Date().toISOString(),
-        player1Name: 'Player 1',
-        player2Name: 'Player 2',
-        result: 'ongoing'
-      }
+        date: gameStartedAtRef.current,
+        player1Name: playerName(true),
+        player2Name: playerName(false),
+        result: 'ongoing',
+        comments: record.moves.map(node => node.comment),
+      },
+      appearance: {
+        boardBackground,
+        pieceThemeType: pieceLabelType,
+        notation: notation as 'western' | 'kifu' | 'usi' | 'csa',
+      },
+      clockSnapshots: clockSnapshotsRef.current.length === moves.length + 1
+        ? [...clockSnapshotsRef.current]
+        : undefined,
     };
-  }, [controller, position?.sfen]);
+  }, [controller, position?.sfen, moves, blackTime, whiteTime, boardBackground, pieceLabelType, notation, player1Type, player2Type, player1EngineId, player2EngineId, engineNames]);
+
+  const prepareStudyImport = (branch: StudyGameBranch) => {
+    setStudyImport({ ...branch, moves: [...branch.moves], comments: [...branch.comments] });
+    setStudyImportError('');
+    studyEnginesToStop.current = null;
+    setIsCompactMenuOpen(false);
+    try { void getCurrentWindow().setFocus().catch(console.error); } catch { /* Browser preview has no native window. */ }
+  };
+  const loadStudyImport = async () => {
+    if (!studyImport || studyImportInFlight.current) return;
+    studyImportInFlight.current = true;
+    setStudyImportBusy(true);
+    try {
+      // Validate before stopping anything or changing the live game.
+      createStudyGameRecord(studyImport.rootSfen, studyImport.moves, studyImport.comments);
+      playingGenerationRef.current++;
+      playingMessagesSuspended.current = true;
+      gameplayReadyRef.current = false;
+      setGameplayReady(false);
+      turnSearchRef.current = null;
+      const engineIds = studyEnginesToStop.current ?? activeEngineIds;
+      const stopped = await Promise.allSettled(engineIds.map(engineId => invoke<CommandResponse>('stop_engine', { engineId })));
+      studyEnginesToStop.current = engineIds.filter((_, index) => {
+        const result = stopped[index];
+        return result.status === 'rejected' || (!result.value.success && !result.value.message?.includes('Engine not found'));
+      });
+      if (studyEnginesToStop.current.length) {
+        controller.setPlayerTypes('human', 'human');
+        controller.setRecommendationsEnabled(false);
+        setPlayer1Type('human'); setPlayer2Type('human'); setRecommendationsEnabled(false);
+        throw new Error('A playing engine could not be stopped. The current record is unchanged and automatic engine moves are paused. Retry loading or cancel and start a new game.');
+      }
+      controller.setPlayerTypes('human', 'human');
+      controller.setRecommendationsEnabled(false);
+      controller.setDisableAutoEngineMove(true);
+      controller.setTimeControls(30 * 60 * 1000, 30 * 60 * 1000, 10 * 1000);
+      setPlayer1Type('human'); setPlayer2Type('human');
+      setPlayer1EngineId(null); setPlayer2EngineId(null); setActiveEngineIds([]);
+      setRecommendationsEnabled(false);
+      setUseTauriEngine(false);
+      setThinkingMovePlayer1(null); setThinkingMovePlayer2(null);
+      setSelectedSquare(null); setSelectedCapturedPiece(null); setLegalMoves([]);
+      setCurrentRecommendation(null); setHighlightedCapturedPiece(null);
+      setWinner(null); setIsGameOverDialogDismissed(false);
+      setBlackTime(30 * 60 * 1000); setWhiteTime(30 * 60 * 1000); setByoyomi(10 * 1000);
+      setIsByoyomiBlack(false); setIsByoyomiWhite(false);
+      setStartColor(studyImport.rootSfen.split(' ')[1] === 'w' ? 'white' : 'black');
+      gameInitializedRef.current = true;
+      gameStartedAtRef.current = new Date().toISOString();
+      clockSnapshotsRef.current = Array.from({ length: studyImport.moves.length + 1 }, () => ({ blackTime: 30 * 60 * 1000, whiteTime: 30 * 60 * 1000, isByoyomiBlack: false, isByoyomiWhite: false }));
+      lastClockSnapshotPlyRef.current = studyImport.moves.length;
+      for (const search of candidateSearchRef.current.values()) if (!search.complete) thinkingHistoryStore.record(search, engineNamesRef.current.get(search.engineId) ?? search.engineId, 'game', 'stopped');
+      candidateSearchRef.current.clear(); setCandidateSearches([]);
+      latestEvaluationRef.current.clear(); setEvaluationPoints([]);
+      controller.loadStudyBranch(studyImport.rootSfen, studyImport.moves, studyImport.comments);
+      setStudyImport(null);
+    } catch (error) {
+      setStudyImportError(error instanceof Error ? error.message : 'Could not load this branch.');
+    } finally { studyImportInFlight.current = false; setStudyImportBusy(false); }
+  };
 
   const handleDeleteGame = (name: string) => {
     const newSavedGames = { ...savedGames };
     delete newSavedGames[name];
     setSavedGames(newSavedGames);
     localStorage.setItem('shogi-saved-games', JSON.stringify(newSavedGames));
+    const newReplayMetadata = { ...savedReplayMetadata };
+    delete newReplayMetadata[name];
+    setSavedReplayMetadata(newReplayMetadata);
+    localStorage.setItem('shogi-saved-game-replay-metadata', JSON.stringify(newReplayMetadata));
   };
 
   const handleCapturedPieceClick = (pieceType: TsshogiPieceType, player: 'player1' | 'player2') => {
@@ -1820,9 +1962,43 @@ const GamePage: React.FC<GamePageProps> = ({
     }
   };
 
+  const legacyViewAvailable = (view: SecondaryView) => view === 'usi' ? (!useTauriEngine || activeEngineIds.length > 0) : view === 'evaluation' && useTauriEngine && activeEngineIds.length > 0;
+  const openLegacyView = (view: SecondaryView) => {
+    if (!legacyViewAvailable(view)) return;
+    if (view === 'usi' && !isUsiMonitorVisible) onToggleUsiMonitor();
+    if (view === 'evaluation') setIsEvaluationVisible(true);
+    focusSecondaryPanel(view === 'usi' ? 'usi-monitor' : 'evaluation');
+    if (useTauriEngine) void WebviewWindow.getByLabel(view === 'usi' ? 'usi-monitor' : 'evaluation-monitor').then(async win => { if (win) { await win.show(); await win.setFocus(); } }).catch(console.error);
+  };
+  useSecondaryViewShortcuts(toggleSecondaryView, legacyViewAvailable);
+  useEffect(() => {
+    const toggle = (event: Event) => { if (!useTauriEngine && (event as CustomEvent<SecondaryView>).detail === 'usi') onToggleUsiMonitor(); };
+    window.addEventListener(SECONDARY_VIEW_TOGGLE_EVENT, toggle);
+    const open = (event: Event) => openLegacyView((event as CustomEvent<SecondaryView>).detail);
+    window.addEventListener(SECONDARY_VIEW_OPEN_EVENT, open);
+  return () => { window.removeEventListener(SECONDARY_VIEW_OPEN_EVENT, open); window.removeEventListener(SECONDARY_VIEW_TOGGLE_EVENT, toggle); };
+  });
+
+  useGameMenuShortcuts({
+    menu: () => setIsCompactMenuOpen(open => !open),
+    exit: handleExitGame, newGame: handleNewGame,
+    save: () => setIsSaveModalOpen(true), load: () => setIsLoadModalOpen(true),
+    exportGif: handleOpenGifExport, settings: () => setIsSettingsOpen(true),
+    pieces: handleCyclePieceTheme, board: handleCycleBoardBackground,
+    hints: controller.hasHumanPlayer() ? handleRecommendationToggle : undefined,
+  }, Boolean(position));
+
   if (!position) {
     return <div>Loading...</div>;
   }
+
+  const getTurnStatus = (side: 'sente' | 'gote') => {
+    const isSente = side === 'sente';
+    const isTurn = position?.sfen.includes(isSente ? ' b ' : ' w ');
+    const type = isSente ? player1Type : player2Type;
+    if (!isTurn) return '';
+    return type === 'ai' ? 'Thinking…' : 'Your turn';
+  };
 
   const getPlayerName = (side: 'sente' | 'gote') => {
     const isSente = side === 'sente';
@@ -1832,20 +2008,9 @@ const GamePage: React.FC<GamePageProps> = ({
     return runtimeId ? (engineNames.get(runtimeId) || 'Engine') : 'Engine';
   };
 
-  const getPlayerLabel = (side: 'sente' | 'gote') =>
-    `${side === 'sente' ? 'Sente' : 'Gote'} · ${getPlayerName(side)}`;
 
-  const getTurnStatus = (side: 'sente' | 'gote') => {
-    const isSente = side === 'sente';
-    const isTurn = position.sfen.includes(isSente ? ' b ' : ' w ');
-    const type = isSente ? player1Type : player2Type;
-    if (!isTurn) return '';
-    return type === 'ai' ? 'Thinking…' : 'Your turn';
-  };
-
-  if (gameLayout === 'compact') {
     return (
-      <div className={`game-page game-page-${gameLayout}`}>
+      <div className="game-page game-page-compact">
         {/* Exit Confirmation Modal - COMPACT LAYOUT */}
         {isExitConfirmModalOpen && (
           <div style={{
@@ -1930,7 +2095,7 @@ const GamePage: React.FC<GamePageProps> = ({
         {/* Compact Layout */}
         <div className="compact-layout">
           {/* Main content area */}
-          <div className="compact-main-content">
+          <MovableGameGroup>
             {/* Left side: Gote captured pieces and move log */}
             <div className="compact-left-side">
               <div className="compact-gote-captured">
@@ -1994,16 +2159,20 @@ const GamePage: React.FC<GamePageProps> = ({
             {/* Right side: Menu and Sente captured pieces */}
             <div className="compact-right-side">
               <div className="compact-menu-area">
-                <button className="compact-menu-toggle" type="button" aria-label="Game menu" aria-expanded={isCompactMenuOpen} aria-controls="compact-game-menu" onClick={() => setIsCompactMenuOpen(open => !open)}>
-                  <span aria-hidden="true">☰</span><span>Menu</span>
+                <button className="compact-menu-toggle" type="button" aria-label="Game menu" aria-keyshortcuts={gameMenuShortcut('menu').aria} title={`Open or close menu (${gameMenuShortcut('menu').label})`} aria-expanded={isCompactMenuOpen} aria-controls="compact-game-menu" onClick={() => setIsCompactMenuOpen(open => !open)}>
+                  <span aria-hidden="true">☰</span><span>Menu</span><kbd>{gameMenuShortcut('menu').label}</kbd>
                 </button>
                 {isCompactMenuOpen && <div className="compact-menu-popover" id="compact-game-menu">
                   <GameControls
+                  secondaryAnalysisAvailable={availableEngines.some(engine => engine.enabled)}
+                  secondaryUsiAvailable={!useTauriEngine || activeEngineIds.length > 0}
+                  secondaryEngineViewsAvailable={useTauriEngine && activeEngineIds.length > 0}
                   onExitGame={handleExitGame}
                   onNewGame={handleNewGame} 
                   onOpenSettings={() => setIsSettingsOpen(true)} 
                   onOpenSaveModal={() => setIsSaveModalOpen(true)}
                   onOpenLoadModal={() => setIsLoadModalOpen(true)}
+                  onExportGif={handleOpenGifExport}
                   onCyclePieceTheme={handleCyclePieceTheme}
                   onToggleRecommendations={handleRecommendationToggle}
                   recommendationsEnabled={recommendationsEnabled}
@@ -2034,8 +2203,10 @@ const GamePage: React.FC<GamePageProps> = ({
                 <CapturedPieces captured={position.blackHand as any} player={'player1'} onPieceClick={(pieceType) => handleCapturedPieceClick(pieceType, 'player1')} selectedCapturedPiece={selectedCapturedPiece} boardBackground={boardBackground} pieceThemeType={pieceLabelType as any} showTooltips={showPieceTooltips} highlightedPiece={getHighlightedPieceForPlayer('player1')} />
               </div>
             </div>
-          </div>
+          </MovableGameGroup>
         </div>
+        {studyImport && <StudyGameImportDialog branch={studyImport} currentGame={currentGameData}
+          busy={studyImportBusy} error={studyImportError} onCancel={() => setStudyImport(null)} onLoad={() => void loadStudyImport()} />}
         {isSettingsOpen && <SettingsPanel 
           pieceThemeType={pieceLabelType as any}
           onPieceThemeTypeChange={handleSettingChange(setPieceLabelType, 'shogi-piece-label-type')}
@@ -2054,8 +2225,6 @@ const GamePage: React.FC<GamePageProps> = ({
           onShowPieceTooltipsChange={handleSettingChange(setShowPieceTooltips, 'shogi-show-piece-tooltips')}
           showEngineThinking={showEngineThinking}
           onShowEngineThinkingChange={handleSettingChange(setShowEngineThinking, 'shogi-show-engine-thinking')}
-          gameLayout={gameLayout}
-          onGameLayoutChange={handleSettingChange(setGameLayout, 'shogi-game-layout')}
           soundsEnabled={soundsEnabled}
           onSoundsEnabledChange={handleSettingChange(handleSoundsEnabledChange, 'shogi-sounds-enabled')}
           soundVolume={soundVolume}
@@ -2079,7 +2248,16 @@ const GamePage: React.FC<GamePageProps> = ({
           onLoadFromText={handleLoadFromText}
           onDelete={handleDeleteGame} 
           savedGames={savedGames} 
+          savedReplayMetadata={savedReplayMetadata}
+          fallbackAppearance={{ boardBackground, pieceThemeType: pieceLabelType, notation: notation as 'western' | 'kifu' | 'usi' | 'csa' }}
         />
+        {isGifExportOpen && <GameGifExportDialog
+          gameName={currentGameData.metadata.name || 'Current Game'}
+          gameData={currentGameData}
+          fallbackAppearance={{ boardBackground, pieceThemeType: pieceLabelType, notation: notation as 'western' | 'kifu' | 'usi' | 'csa' }}
+          onClose={() => setIsGifExportOpen(false)}
+          headless
+        />}
         <StartGameModal 
           isOpen={isStartGameModalOpen} 
           onClose={() => setIsStartGameModalOpen(false)} 
@@ -2118,247 +2296,21 @@ const GamePage: React.FC<GamePageProps> = ({
             onToggle={onToggleUsiMonitor}
           />
         )}
+        {availableEngines.some(engine => engine.enabled) && <CandidateMovesHost
+          onLoadStudyGame={prepareStudyImport}
+          record={{ initialSfen: currentGameData.position, moves: currentGameData.moves }}
+          engines={availableEngines}
+          payload={{ searches: candidateSearches.filter(search => activeEngineIds.includes(search.engineId)), engineNames: Object.fromEntries(engineNames), currentSfen: position.sfen, pieceThemeType: pieceLabelType, boardBackground }}
+          isVisible={isCandidatesVisible} onToggle={handleToggleCandidates} onDismiss={handleDismissCandidates}
+        />}
+        {useTauriEngine && activeEngineIds.length > 0 && <EvaluationHost
+          points={evaluationPoints}
+          isVisible={isEvaluationVisible}
+          onToggle={handleToggleEvaluation}
+          onDismiss={handleDismissEvaluation}
+        />}
     </div>
     );
-  }
-
-  // Classic Layout
-  return (
-    <div className={`game-page game-page-${gameLayout}`}>
-      {/* Exit Confirmation Modal - CLASSIC LAYOUT */}
-      {isExitConfirmModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(2px)'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-            width: '90%',
-            maxWidth: '400px',
-            overflow: 'hidden',
-            animation: 'modalSlideIn 0.2s ease-out'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '24px 24px 16px 24px',
-              borderBottom: '1px solid #e0e0e0'
-            }}>
-              <h2 style={{ margin: 0, color: '#333', fontSize: '1.5rem', fontWeight: 600 }}>Exit Game</h2>
-            </div>
-            <div style={{ padding: '24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-              <p style={{ margin: 0, color: '#555', fontSize: '16px', lineHeight: 1.5 }}>
-                Are you sure you want to exit? Your current game will be lost.
-              </p>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '12px',
-              padding: '16px 24px 24px 24px'
-            }}>
-              <button 
-                onClick={handleCancelExit}
-                style={{
-                  padding: '12px 24px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  backgroundColor: '#f5f5f5',
-                  color: '#666',
-                  minWidth: '100px'
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleConfirmExit}
-                style={{
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  minWidth: '100px'
-                }}
-              >
-                Exit Game
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Control Panel at the top */}
-      <div className="control-panel">
-        <GameControls 
-          onExitGame={handleExitGame}
-          onNewGame={handleNewGame} 
-          onOpenSettings={() => setIsSettingsOpen(true)} 
-          onOpenSaveModal={() => setIsSaveModalOpen(true)}
-          onOpenLoadModal={() => setIsLoadModalOpen(true)}
-          onCyclePieceTheme={handleCyclePieceTheme}
-          onToggleRecommendations={handleRecommendationToggle}
-          recommendationsEnabled={recommendationsEnabled}
-          hasHumanPlayer={controller.hasHumanPlayer()}
-          onCycleBoardBackground={handleCycleBoardBackground}
-        />
-      </div>
-
-      {/* Gote captured pieces */}
-      <div className="gote-captured-pieces">
-        <CapturedPieces captured={position.whiteHand as any} player={'player2'} onPieceClick={(pieceType) => handleCapturedPieceClick(pieceType, 'player2')} selectedCapturedPiece={selectedCapturedPiece} boardBackground={boardBackground} pieceThemeType={pieceLabelType as any} showTooltips={showPieceTooltips} highlightedPiece={getHighlightedPieceForPlayer('player2')} />
-      </div>
-
-      {/* Board and Move Log side by side */}
-      <div className="board-and-move-log">
-        <div className="board-container" style={{ position: 'relative' }} ref={classicBoardRef}>
-          <Board 
-            ref={boardComponentRef}
-            key={renderKey} 
-            position={position} 
-            onSquareClick={handleSquareClick} 
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-            selectedSquare={selectedSquare} 
-            legalMoves={legalMoves} 
-            lastMove={lastMove}
-            isSquareAttacked={showAttackedPieces ? (square) => controller.isSquareAttacked(square) : undefined}
-            isInCheck={isInCheck}
-            kingInCheckSquare={kingInCheckSquare}
-            attackingPieces={attackingPieces}
-            boardBackground={boardBackground}
-            pieceThemeType={pieceLabelType as any}
-            showPieceTooltips={showPieceTooltips}
-            notation={notation as 'western' | 'kifu' | 'usi' | 'csa'}
-            promotionTargetUsi={promotionMove?.to.usi}
-            promotionModalContent={promotionMove && boardComponentRef.current && <PromotionModal 
-              onPromote={handlePromotion} 
-              pieceType={promotionMove.pieceType}
-              player={promotionMove.player}
-              pieceThemeType={pieceLabelType}
-              modalWidth={PROMOTION_MODAL_WIDTH}
-              modalHeight={PROMOTION_MODAL_HEIGHT}
-              pieceSize={SQUARE_WIDTH}
-              destinationSquareUsi={promotionMove.destinationSquareUsi}
-              boardRef={boardComponentRef as React.RefObject<BoardRef>}
-              boardContainerRef={classicBoardRef}
-            />}
-          />
-          <RecommendationOverlay 
-            recommendation={currentRecommendation}
-            boardRef={classicBoardRef}
-            boardComponentRef={boardComponentRef}
-            pieceThemeType={pieceLabelType as any}
-            currentPlayer={position.sfen.includes(' b ') ? 'black' : 'white'}
-            onHighlightCapturedPiece={handleHighlightCapturedPiece}
-          />
-        </div>
-        <div className="move-log-container">
-          <div className="classic-clock-area">
-            <div className="clock-row">
-              <span className="clock-label">
-                {position.sfen.includes(' w ') ? '▶' : ' '} Gote
-              </span>
-              <Clock time={whiteTime} isByoyomi={isByoyomiWhite} />
-            </div>
-            <div className="clock-row">
-              <span className="clock-label">
-                {position.sfen.includes(' b ') ? '▶' : ' '} Sente
-              </span>
-              <Clock time={blackTime} isByoyomi={isByoyomiBlack} />
-            </div>
-          </div>
-          <MoveLog 
-            moves={controller.getRecord().moves} 
-            notation={notation as 'western' | 'kifu' | 'usi' | 'csa'}
-            startColor={startColor}
-          />
-        </div>
-      </div>
-
-      {/* Sente captured pieces */}
-      <div className="sente-captured-pieces">
-        <CapturedPieces captured={position.blackHand as any} player={'player1'} onPieceClick={(pieceType) => handleCapturedPieceClick(pieceType, 'player1')} selectedCapturedPiece={selectedCapturedPiece} boardBackground={boardBackground} pieceThemeType={pieceLabelType as any} showTooltips={showPieceTooltips} highlightedPiece={getHighlightedPieceForPlayer('player1')} />
-      </div>
-      <SaveGameModal 
-        isOpen={isSaveModalOpen} 
-        onClose={() => setIsSaveModalOpen(false)} 
-        onSave={handleSaveGame}
-        gameData={getCurrentGameData()}
-      />
-      <LoadGameModal 
-        isOpen={isLoadModalOpen} 
-        onClose={() => setIsLoadModalOpen(false)} 
-        onLoad={handleLoadGame} 
-        onLoadFromText={handleLoadFromText}
-        onDelete={handleDeleteGame} 
-        savedGames={savedGames} 
-      />
-      <StartGameModal 
-        isOpen={isStartGameModalOpen} 
-        onClose={() => setIsStartGameModalOpen(false)} 
-        onStartGame={handleStartGame} 
-      />
-      {winner && !isGameOverDialogDismissed && (
-        <CheckmateModal 
-          winner={winner}
-          endgameType={endgameType}
-          details={endgameDetails}
-          onDismiss={handleDismiss}
-          onNewGame={handleNewGame}
-        />
-      )}
-      {/* Exit Confirmation Modal */}
-      <ConfirmExitModal
-        isOpen={isExitConfirmModalOpen}
-        onConfirm={handleConfirmExit}
-        onCancel={handleCancelExit}
-      />
-      
-      {/* USI Monitor positioned below the game content */}
-      {useTauriEngine ? (
-        // Only render TauriUsiMonitor when engines are properly initialized
-        activeEngineIds.length > 0 ? (
-          <UsiMonitorHost
-            key={`${player1EngineId}-${player2EngineId}-${activeEngineIds.join(',')}`}
-            session={{ engineIds: activeEngineIds, engineNames: Object.fromEntries(engineNames), player1EngineId, player2EngineId, player1Type: getPlayerTypesFromState().player1Type, player2Type: getPlayerTypesFromState().player2Type }}
-            engines={availableEngines}
-            isVisible={isUsiMonitorVisible}
-            onToggle={onToggleUsiMonitor}
-            onDismiss={onDismissUsiMonitor}
-          />
-        ) : null
-      ) : (
-        <UsiMonitor
-          lastSentCommand={lastSentCommand}
-          lastReceivedCommand={lastReceivedCommand}
-          communicationHistory={communicationHistory}
-          sessions={sessions}
-          isVisible={isUsiMonitorVisible}
-          onToggle={onToggleUsiMonitor}
-        />
-      )}
-    </div>
-  );
 };
 
 export default GamePage;

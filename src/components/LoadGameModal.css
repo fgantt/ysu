@@ -361,6 +361,12 @@
   background-color: var(--color-accent-hover);
 }
 
+.saved-game-item .buttons button:nth-child(2) {
+  background-color: var(--color-button-secondary);
+  color: var(--color-button-secondary-text);
+  border: 1px solid var(--color-border-light);
+}
+
 .saved-game-item .buttons button:last-child {
   background-color: var(--color-button-danger);
   color: var(--color-button-danger-text);

@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import SvgPiece from './SvgPiece';
 import { PieceType } from 'tsshogi';
 import './HelpPage.css';
+import { analysisGuides, featureGuides, secondaryWindowInstructions } from '../help/guides';
 
 const HelpPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('about');
+  const [activeSection, setActiveSection] = useState('playing');
   const [pieceThemeType, setPieceThemeType] = useState<string>(localStorage.getItem('shogi-piece-label-type') || 'kanji');
 
   // Listen for storage changes to sync theme updates
@@ -18,7 +19,7 @@ const HelpPage: React.FC = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Also listen for custom events (for same-tab updates)
     const handleThemeChange = (e: CustomEvent) => {
       setPieceThemeType(e.detail);
@@ -193,10 +194,10 @@ const HelpPage: React.FC = () => {
     }
   ];
 
-  const renderMovementDiagram = (piece: any) => {
+  const renderMovementDiagram = (piece: { type: PieceType; movement: number[][] }) => {
     const gridSize = 5;
     const center = Math.floor(gridSize / 2);
-    
+
     return (
       <div className="movement-diagram" style={{ width: 'auto', height: 'auto' }}>
         <div className="diagram-grid" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
@@ -205,20 +206,20 @@ const HelpPage: React.FC = () => {
             const col = index % gridSize;
             const relativeRow = row - center;
             const relativeCol = col - center;
-            
+
             const isPiece = row === center && col === center;
-            const isLegalMove = piece.movement.some(([dr, dc]: [number, number]) => 
+            const isLegalMove = piece.movement.some(([dr, dc]) =>
               dr === relativeRow && dc === relativeCol
             );
-            
+
             let className = 'diagram-square';
             if (isPiece) className += ' piece-square';
             else if (isLegalMove) className += ' legal-move';
-            
+
             return (
               <div key={index} className={className}>
                 {isPiece && piece.type && (
-                  <SvgPiece 
+                  <SvgPiece
                     type={piece.type}
                     player="player1"
                     size={30}
@@ -240,53 +241,55 @@ const HelpPage: React.FC = () => {
         <button className="back-button" onClick={() => navigate('/')}>
           ← Back to Home
         </button>
-        <h1>Shogi Help & Rules</h1>
+        <h1>Shogi Help & User Guide</h1>
       </div>
 
-      <div className="help-navigation">
-        <button 
-          className={`nav-tab ${activeSection === 'about' ? 'active' : ''}`}
-          onClick={() => setActiveSection('about')}
-        >
-          About Shogi
-        </button>
-        <button 
-          className={`nav-tab ${activeSection === 'rules' ? 'active' : ''}`}
-          onClick={() => setActiveSection('rules')}
-        >
-          Rules
-        </button>
-        <button 
-          className={`nav-tab ${activeSection === 'pieces' ? 'active' : ''}`}
-          onClick={() => setActiveSection('pieces')}
-        >
-          Piece Movements
-        </button>
-        <button 
-          className={`nav-tab ${activeSection === 'kifu-notation' ? 'active' : ''}`}
-          onClick={() => setActiveSection('kifu-notation')}
-        >
-          Kifu Notation
-        </button>
-      </div>
+      <nav className="help-navigation" aria-label="Help topics">
+        {[...featureGuides.map(({ id, label }) => ({ id, label })),
+          { id: 'analysis', label: 'Analysis Tools' }, { id: 'about', label: 'About Shogi' },
+          { id: 'rules', label: 'Rules' }, { id: 'pieces', label: 'Piece Movements' },
+          { id: 'kifu-notation', label: 'Kifu Notation' }].map(section => (
+          <button key={section.id} className={`nav-tab ${activeSection === section.id ? 'active' : ''}`}
+            aria-pressed={activeSection === section.id} onClick={() => setActiveSection(section.id)}>
+            {section.label}
+          </button>
+        ))}
+      </nav>
 
       <div className="help-content">
+        {featureGuides.filter(section => section.id === activeSection).map(section => (
+          <section className="content-section" key={section.id}>
+            <h2>{section.title}</h2>
+            {section.articles.map(article => <article key={article.title}><h3>{article.title}</h3><p>{article.text}</p></article>)}
+          </section>
+        ))}
+        {activeSection === 'analysis' && (
+          <section className="content-section">
+            <h2>Analysis tools</h2>
+            <p>Open analysis windows from the game’s View menu. Each window includes expandable usage instructions; Evaluation keeps its guide inside Evaluation details.</p>
+            <nav className="analysis-guide-links" aria-label="Analysis guides">
+              {Object.entries(analysisGuides).map(([id, guide]) => <a key={id} href={`#help-${id}`}>{guide.title.replace('Using ', '')}</a>)}
+            </nav>
+            <h3>Opening and arranging windows</h3><ul>{secondaryWindowInstructions.map(step => <li key={step}>{step}</li>)}</ul>
+            {Object.entries(analysisGuides).map(([id, guide]) => <article key={id} id={`help-${id}`}><h3>{guide.title}</h3><ol>{guide.steps.map(step => <li key={step}>{step}</li>)}</ol></article>)}
+          </section>
+        )}
         {activeSection === 'about' && (
           <div className="content-section">
             <h2>About Shogi</h2>
             <p>
-              Shogi, also known as Japanese Chess, is a strategic board game that shares similarities 
-              with Western chess but has unique and fascinating differences. It\'s played on a 9x9 board 
+              Shogi, also known as Japanese Chess, is a strategic board game that shares similarities
+              with Western chess but has unique and fascinating differences. It's played on a 9x9 board
               and features the distinctive rule of dropping captured pieces back onto the board.
             </p>
             <p>
-              Unlike Western chess, all pieces in Shogi are the same color and are differentiated by 
-              their shape and the kanji (Japanese characters) written on them. Players tell their pieces 
-              from their opponent\'s by the direction they are pointing.
+              Unlike Western chess, all pieces in Shogi are the same color and are differentiated by
+              their shape and the kanji (Japanese characters) written on them. Players tell their pieces
+              from their opponent's by the direction they are pointing.
             </p>
             <p>
-              The most unique aspect of Shogi is the "dropping" rule - when you capture an opponent\'s 
-              piece, it becomes part of your "pieces in hand" and can be dropped onto any empty square 
+              The most unique aspect of Shogi is the "dropping" rule - when you capture an opponent's
+              piece, it becomes part of your "pieces in hand" and can be dropped onto any empty square
               on the board on a subsequent turn.
             </p>
           </div>
@@ -298,7 +301,7 @@ const HelpPage: React.FC = () => {
             <div className="rules-grid">
               <div className="rule-card">
                 <h3>Objective</h3>
-                <p>Checkmate the opponent\'s King by placing it in a position where it is under attack and has no legal move to escape.</p>
+                <p>Checkmate the opponent's King by placing it in a position where it is under attack and has no legal move to escape.</p>
               </div>
               <div className="rule-card">
                 <h3>Setup</h3>
@@ -306,11 +309,11 @@ const HelpPage: React.FC = () => {
               </div>
               <div className="rule-card">
                 <h3>Promotion</h3>
-                <p>Most pieces can be promoted when they enter, exit, or pass through the last three ranks on the opponent\'s side.</p>
+                <p>Most pieces can be promoted when their move starts or ends in the last three ranks on the opponent's side.</p>
               </div>
               <div className="rule-card">
                 <h3>Dropping</h3>
-                <p>Captured pieces become part of your hand and can be dropped onto any empty square on the board.</p>
+                <p>Captured pieces return to their unpromoted form in your hand. Drop onto a legal empty square: never leave a pawn or lance on its last rank, or a knight on its last two ranks. You cannot drop a pawn on a file with your own unpromoted pawn, or give immediate checkmate with a pawn drop.</p>
               </div>
             </div>
           </div>
@@ -319,15 +322,16 @@ const HelpPage: React.FC = () => {
         {activeSection === 'pieces' && (
           <div className="content-section">
             <h2>Piece Movements</h2>
-            <p>Click on a piece to see its movement pattern:</p>
-            
+            <p>Green squares show possible destinations on an empty board. Forward is upward for the pieces shown; reverse the direction for the opponent. Rook, bishop, and lance movement continues beyond the diagram until blocked.</p>
+
             <h3>Regular Pieces</h3>
             <div className="pieces-grid">
               {pieceData.map((piece, index) => (
                 <div key={index} className="piece-card">
                   <div className="piece-header">
-                    <SvgPiece 
-                      piece={{ type: piece.type, player: 'player1', promoted: false }}
+                    <SvgPiece
+                      type={piece.type}
+                      player="player1"
                       size={40}
                       pieceThemeType={pieceThemeType}
                     />
@@ -344,8 +348,9 @@ const HelpPage: React.FC = () => {
               {promotedPieceData.map((piece, index) => (
                 <div key={index} className="piece-card">
                   <div className="piece-header">
-                    <SvgPiece 
-                      piece={{ type: piece.type, player: 'player1', promoted: true }}
+                    <SvgPiece
+                      type={piece.type}
+                      player="player1"
                       size={40}
                       pieceThemeType={pieceThemeType}
                     />
@@ -369,7 +374,7 @@ const HelpPage: React.FC = () => {
             <ul>
               <li><strong>Player Indicator:</strong> Often, a symbol indicates which player is moving. Black (Sente, the first player) is typically represented by a black triangle (▲), while White (Gote, the second player) is shown with a white triangle (△).</li>
               <li><strong>Piece:</strong> The piece being moved is identified, usually by its initial in Western notation (e.g., P for Pawn, R for Rook) or its Japanese character (e.g., 歩 for Pawn).</li>
-              <li><strong>Destination Coordinates:</strong> The square the piece moves to is always indicated. Shogi boards are a 9x9 grid. Files (columns) are numbered 1 to 9 from right to left, and ranks (rows) are numbered 1 to 9 from top to bottom (from Black\'s perspective). A move to the square at file 7, rank 6 would be written as 76 in Western notation or ７六 in Japanese.</li>
+              <li><strong>Destination Coordinates:</strong> The square the piece moves to is always indicated. Shogi boards are a 9x9 grid. Files (columns) are numbered 1 to 9 from right to left, and ranks (rows) are numbered 1 to 9 from top to bottom (from Black's perspective). A move to the square at file 7, rank 6 would be written as 76 in Western notation or ７六 in Japanese.</li>
               <li><strong>Action/Movement Type:</strong> Symbols are used to clarify the type of move.
                 <ul>
                   <li><strong>Normal Move:</strong> A hyphen (-) is often used in Western notation (e.g., P-76).</li>
@@ -403,7 +408,7 @@ const HelpPage: React.FC = () => {
 
             <h3>Special Notation</h3>
             <ul>
-              <li><strong>Same Square Capture (同 dou):</strong> If a piece captures the opponent\'s piece on the same square where the opponent just moved, the destination coordinates can be replaced with the character '同', meaning "same." This always involves a capture.</li>
+              <li><strong>Same Destination (同 dou):</strong> If a move has the same destination as the previous move, the destination coordinates can be replaced with the character '同', meaning "same." It identifies the same destination square as the previous move.</li>
             </ul>
 
             <h3>KIF File Format</h3>

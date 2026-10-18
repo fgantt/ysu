@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 interface UseTauriEventsOptions {
@@ -16,40 +16,37 @@ export function useTauriEvents(
   engineId: string | null,
   options: UseTauriEventsOptions
 ) {
-  const { onUsiMessage, onUsiError } = options;
+  const callbacks = useRef(options);
+  callbacks.current = options;
+  const hasMessageHandler = Boolean(options.onUsiMessage);
+  const hasErrorHandler = Boolean(options.onUsiError);
 
   useEffect(() => {
     if (!engineId) return;
-
+    let disposed = false;
     const unlistenFunctions: UnlistenFn[] = [];
-
+    const retain = (unlisten: UnlistenFn) => {
+      if (disposed) unlisten();
+      else unlistenFunctions.push(unlisten);
+    };
     const setupListeners = async () => {
-      // Listen for USI messages
-      if (onUsiMessage) {
-        const messageEvent = `usi-message::${engineId}`;
-        const unlisten = await listen<string>(messageEvent, (event) => {
-          onUsiMessage(engineId, event.payload);
-        });
-        unlistenFunctions.push(unlisten);
+      if (hasMessageHandler) {
+        retain(await listen<string>(`usi-message::${engineId}`, event => {
+          if (!disposed) callbacks.current.onUsiMessage?.(engineId, event.payload);
+        }));
       }
-
-      // Listen for USI errors
-      if (onUsiError) {
-        const errorEvent = `usi-error::${engineId}`;
-        const unlisten = await listen<string>(errorEvent, (event) => {
-          onUsiError(engineId, event.payload);
-        });
-        unlistenFunctions.push(unlisten);
+      if (!disposed && hasErrorHandler) {
+        retain(await listen<string>(`usi-error::${engineId}`, event => {
+          if (!disposed) callbacks.current.onUsiError?.(engineId, event.payload);
+        }));
       }
     };
-
-    setupListeners();
-
-    // Cleanup
+    void setupListeners().catch(error => console.error('Failed to subscribe to engine events:', error));
     return () => {
-      unlistenFunctions.forEach((unlisten) => unlisten());
+      disposed = true;
+      unlistenFunctions.forEach(unlisten => unlisten());
     };
-  }, [engineId, onUsiMessage, onUsiError]);
+  }, [engineId, hasMessageHandler, hasErrorHandler]);
 }
 
 /**

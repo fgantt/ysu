@@ -1,0 +1,14 @@
+.movable-game-group { position: relative; z-index: 1; }
+.movable-game-group .column-numbers,
+.movable-game-group .captured-pieces h3,
+.movable-game-group .move-log h3 { cursor: grab; touch-action: none; user-select: none; }
+.movable-game-group .column-numbers:active,
+.movable-game-group .captured-pieces h3:active,
+.movable-game-group .move-log h3:active { cursor: grabbing; }
+
+.game-group-corner { position: absolute; width: 20px; height: 20px; z-index: 30; touch-action: none; }
+.game-group-corner-nw { top: -8px; left: -8px; cursor: nwse-resize; }
+.game-group-corner-ne { top: -8px; right: -8px; cursor: nesw-resize; }
+.game-group-corner-sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.game-group-corner-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+.game-group-corner:focus-visible { outline: 2px solid var(--color-accent, #b79045); }

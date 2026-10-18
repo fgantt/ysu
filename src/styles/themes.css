@@ -2,7 +2,7 @@
  * Shogi Vibe - Comprehensive Theme System
  * 
  * This file defines CSS variables for consistent theming across the application.
- * Five themes are available: Light, Dark, Traditional, Ocean Blue, and Forest Green.
+ * Preset palettes and an adaptive Dynamic theme are available in Settings.
  * 
  * To use: Add data-theme attribute to html element
  * Example: <html data-theme="ocean">
@@ -1157,4 +1157,299 @@
 [data-theme="sepia"] input[type="number"]::-webkit-inner-spin-button:hover,
 [data-theme="sepia"] input[type="number"]::-webkit-outer-spin-button:hover {
   background: rgba(139, 69, 19, 0.4);
+}
+
+/* Washi palette */
+[data-theme="washi"] {
+  --color-bg-modal: #faf6ed;
+  --color-bg-panel: #faf6ed;
+  --color-bg-card: #f1e9db;
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+  --color-text-primary: #292721;
+  --color-text-secondary: #625a4d;
+  --color-text-muted: #756b5c;
+  --color-text-disabled: #756b5c;
+  --color-heading: #292721;
+  --color-border-light: #f1e9db;
+  --color-border-medium: #756b5c;
+  --color-border-dark: #625a4d;
+  --color-button-primary: #a43c2b;
+  --color-button-primary-hover: #862e20;
+  --color-button-primary-active: #862e20;
+  --color-button-primary-text: #ffffff;
+  --color-button-secondary: #f1e9db;
+  --color-button-secondary-hover: #f3d9ca;
+  --color-button-secondary-active: #f3d9ca;
+  --color-button-secondary-text: #292721;
+  --color-button-danger: #c53030;
+  --color-button-danger-hover: #9b2c2c;
+  --color-button-danger-text: #ffffff;
+  --color-input-bg: #faf6ed;
+  --color-input-border: #756b5c;
+  --color-input-focus: #a43c2b;
+  --color-input-text: #292721;
+  --color-input-placeholder: #756b5c;
+  --color-accent: #a43c2b;
+  --color-accent-hover: #862e20;
+  --color-accent-light: #f3d9ca;
+  --color-success-bg: #c6f6d5;
+  --color-success-border: #9ae6b4;
+  --color-success-text: #22543d;
+  --color-error-bg: #fed7d7;
+  --color-error-border: #fc8181;
+  --color-error-text: #742a2a;
+  --color-warning-bg: #feebc8;
+  --color-warning-border: #fbd38d;
+  --color-warning-text: #744210;
+  --color-info-bg: #bee3f8;
+  --color-info-border: #90cdf4;
+  --color-info-text: #2c5282;
+  --color-select-bg: #faf6ed;
+  --color-select-border: #756b5c;
+  --color-select-text: #292721;
+  --color-tab-active: #a43c2b;
+  --color-tab-inactive: #625a4d;
+  --color-tab-hover: #f1e9db;
+  --color-link: #a43c2b;
+  --color-link-hover: #862e20;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Jade palette */
+[data-theme="jade"] {
+  --color-bg-modal: #f1f8f3;
+  --color-bg-panel: #f1f8f3;
+  --color-bg-card: #dfede4;
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+  --color-text-primary: #18382e;
+  --color-text-secondary: #3e6053;
+  --color-text-muted: #567264;
+  --color-text-disabled: #567264;
+  --color-heading: #18382e;
+  --color-border-light: #dfede4;
+  --color-border-medium: #567264;
+  --color-border-dark: #3e6053;
+  --color-button-primary: #226a55;
+  --color-button-primary-hover: #17513f;
+  --color-button-primary-active: #17513f;
+  --color-button-primary-text: #ffffff;
+  --color-button-secondary: #dfede4;
+  --color-button-secondary-hover: #c5e4d6;
+  --color-button-secondary-active: #c5e4d6;
+  --color-button-secondary-text: #18382e;
+  --color-button-danger: #c53030;
+  --color-button-danger-hover: #9b2c2c;
+  --color-button-danger-text: #ffffff;
+  --color-input-bg: #f1f8f3;
+  --color-input-border: #567264;
+  --color-input-focus: #226a55;
+  --color-input-text: #18382e;
+  --color-input-placeholder: #567264;
+  --color-accent: #226a55;
+  --color-accent-hover: #17513f;
+  --color-accent-light: #c5e4d6;
+  --color-success-bg: #c6f6d5;
+  --color-success-border: #9ae6b4;
+  --color-success-text: #22543d;
+  --color-error-bg: #fed7d7;
+  --color-error-border: #fc8181;
+  --color-error-text: #742a2a;
+  --color-warning-bg: #feebc8;
+  --color-warning-border: #fbd38d;
+  --color-warning-text: #744210;
+  --color-info-bg: #bee3f8;
+  --color-info-border: #90cdf4;
+  --color-info-text: #2c5282;
+  --color-select-bg: #f1f8f3;
+  --color-select-border: #567264;
+  --color-select-text: #18382e;
+  --color-tab-active: #226a55;
+  --color-tab-inactive: #3e6053;
+  --color-tab-hover: #dfede4;
+  --color-link: #226a55;
+  --color-link-hover: #17513f;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Indigo palette */
+[data-theme="indigo"] {
+  --color-bg-modal: #151d32;
+  --color-bg-panel: #151d32;
+  --color-bg-card: #222e48;
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
+  --color-text-primary: #edf0ff;
+  --color-text-secondary: #c0cbea;
+  --color-text-muted: #9eacd0;
+  --color-text-disabled: #9eacd0;
+  --color-heading: #edf0ff;
+  --color-border-light: #222e48;
+  --color-border-medium: #9eacd0;
+  --color-border-dark: #c0cbea;
+  --color-button-primary: #a8baff;
+  --color-button-primary-hover: #c5d1ff;
+  --color-button-primary-active: #c5d1ff;
+  --color-button-primary-text: #151d32;
+  --color-button-secondary: #222e48;
+  --color-button-secondary-hover: #303f68;
+  --color-button-secondary-active: #303f68;
+  --color-button-secondary-text: #edf0ff;
+  --color-button-danger: #c53030;
+  --color-button-danger-hover: #9b2c2c;
+  --color-button-danger-text: #ffffff;
+  --color-input-bg: #151d32;
+  --color-input-border: #9eacd0;
+  --color-input-focus: #a8baff;
+  --color-input-text: #edf0ff;
+  --color-input-placeholder: #9eacd0;
+  --color-accent: #a8baff;
+  --color-accent-hover: #c5d1ff;
+  --color-accent-light: #303f68;
+  --color-success-bg: #183c2b;
+  --color-success-border: #4e996b;
+  --color-success-text: #b9edcb;
+  --color-error-bg: #4e2426;
+  --color-error-border: #bd7276;
+  --color-error-text: #ffd0d0;
+  --color-warning-bg: #493a20;
+  --color-warning-border: #b99753;
+  --color-warning-text: #ffe3a5;
+  --color-info-bg: #222e48;
+  --color-info-border: #9eacd0;
+  --color-info-text: #edf0ff;
+  --color-select-bg: #151d32;
+  --color-select-border: #9eacd0;
+  --color-select-text: #edf0ff;
+  --color-tab-active: #a8baff;
+  --color-tab-inactive: #c0cbea;
+  --color-tab-hover: #222e48;
+  --color-link: #a8baff;
+  --color-link-hover: #c5d1ff;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Copper palette */
+[data-theme="copper"] {
+  --color-bg-modal: #24201e;
+  --color-bg-panel: #24201e;
+  --color-bg-card: #352e29;
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
+  --color-text-primary: #fff2e6;
+  --color-text-secondary: #dfcbbb;
+  --color-text-muted: #bca694;
+  --color-text-disabled: #bca694;
+  --color-heading: #fff2e6;
+  --color-border-light: #352e29;
+  --color-border-medium: #bca694;
+  --color-border-dark: #dfcbbb;
+  --color-button-primary: #e8ad79;
+  --color-button-primary-hover: #f4c49c;
+  --color-button-primary-active: #f4c49c;
+  --color-button-primary-text: #24201e;
+  --color-button-secondary: #352e29;
+  --color-button-secondary-hover: #5c4030;
+  --color-button-secondary-active: #5c4030;
+  --color-button-secondary-text: #fff2e6;
+  --color-button-danger: #c53030;
+  --color-button-danger-hover: #9b2c2c;
+  --color-button-danger-text: #ffffff;
+  --color-input-bg: #24201e;
+  --color-input-border: #bca694;
+  --color-input-focus: #e8ad79;
+  --color-input-text: #fff2e6;
+  --color-input-placeholder: #bca694;
+  --color-accent: #e8ad79;
+  --color-accent-hover: #f4c49c;
+  --color-accent-light: #5c4030;
+  --color-success-bg: #183c2b;
+  --color-success-border: #4e996b;
+  --color-success-text: #b9edcb;
+  --color-error-bg: #4e2426;
+  --color-error-border: #bd7276;
+  --color-error-text: #ffd0d0;
+  --color-warning-bg: #493a20;
+  --color-warning-border: #b99753;
+  --color-warning-text: #ffe3a5;
+  --color-info-bg: #352e29;
+  --color-info-border: #bca694;
+  --color-info-text: #fff2e6;
+  --color-select-bg: #24201e;
+  --color-select-border: #bca694;
+  --color-select-text: #fff2e6;
+  --color-tab-active: #e8ad79;
+  --color-tab-inactive: #dfcbbb;
+  --color-tab-hover: #352e29;
+  --color-link: #e8ad79;
+  --color-link-hover: #f4c49c;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Plum palette */
+[data-theme="plum"] {
+  --color-bg-modal: #faf5fc;
+  --color-bg-panel: #faf5fc;
+  --color-bg-card: #eee3f1;
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+  --color-text-primary: #38253e;
+  --color-text-secondary: #644c6e;
+  --color-text-muted: #7b6285;
+  --color-text-disabled: #7b6285;
+  --color-heading: #38253e;
+  --color-border-light: #eee3f1;
+  --color-border-medium: #7b6285;
+  --color-border-dark: #644c6e;
+  --color-button-primary: #78458c;
+  --color-button-primary-hover: #5e316f;
+  --color-button-primary-active: #5e316f;
+  --color-button-primary-text: #ffffff;
+  --color-button-secondary: #eee3f1;
+  --color-button-secondary-hover: #e7d4ef;
+  --color-button-secondary-active: #e7d4ef;
+  --color-button-secondary-text: #38253e;
+  --color-button-danger: #c53030;
+  --color-button-danger-hover: #9b2c2c;
+  --color-button-danger-text: #ffffff;
+  --color-input-bg: #faf5fc;
+  --color-input-border: #7b6285;
+  --color-input-focus: #78458c;
+  --color-input-text: #38253e;
+  --color-input-placeholder: #7b6285;
+  --color-accent: #78458c;
+  --color-accent-hover: #5e316f;
+  --color-accent-light: #e7d4ef;
+  --color-success-bg: #c6f6d5;
+  --color-success-border: #9ae6b4;
+  --color-success-text: #22543d;
+  --color-error-bg: #fed7d7;
+  --color-error-border: #fc8181;
+  --color-error-text: #742a2a;
+  --color-warning-bg: #feebc8;
+  --color-warning-border: #fbd38d;
+  --color-warning-text: #744210;
+  --color-info-bg: #bee3f8;
+  --color-info-border: #90cdf4;
+  --color-info-text: #2c5282;
+  --color-select-bg: #faf5fc;
+  --color-select-border: #7b6285;
+  --color-select-text: #38253e;
+  --color-tab-active: #78458c;
+  --color-tab-inactive: #644c6e;
+  --color-tab-hover: #eee3f1;
+  --color-link: #78458c;
+  --color-link-hover: #5e316f;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }

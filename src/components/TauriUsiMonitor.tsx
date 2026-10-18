@@ -1,3 +1,5 @@
+import AnalysisInstructions from './AnalysisInstructions';
+import { SecondaryWindowControls } from './SecondaryWindowControls';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMultipleEngineEvents } from '../hooks/useTauriEvents';
 import { parseEngineInfo } from '../utils/tauriEngine';
@@ -287,7 +289,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
   };
 
   // Format PV with player symbols
-  const formatPV = (pv: string, engineId: string): JSX.Element[] => {
+  const formatPV = (pv: string, engineId: string): React.ReactElement[] => {
     if (!pv) return [];
     
     const moves = pv.split(' ').filter(m => m.trim());
@@ -310,25 +312,13 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
     });
   };
 
-  if (!isVisible) {
-    return (
-      <div className="usi-monitor-toggle">
-        <button onClick={onToggle} className="toggle-button">
-          USI Monitor
-        </button>
-      </div>
-    );
-  }
+  if (!isVisible) return null;
 
   return (
-    <div className="usi-monitor">
+    <div className="usi-monitor usi-communication-monitor">
       <div className="usi-monitor-header" title={onPopOut ? 'Drag to move within the app' : undefined}>
         <h3>USI Communication Monitor</h3>
-        <div className="usi-monitor-actions">
-          {onDock && <button onClick={onDock} className="usi-monitor-action" aria-label="Dock USI Monitor" title="Dock monitor beside the board"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16M17 10h2M17 14h2"/></svg></button>}
-          {onPopOut && <button onClick={onPopOut} className="usi-monitor-action" aria-label="Pop out USI Monitor" title="Pop out to a movable window"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/></svg></button>}
-          <button onClick={onToggle} className="usi-monitor-action" aria-label={externalWindow ? 'Close USI Monitor window' : 'Minimize USI Monitor'} title={externalWindow ? 'Close window' : 'Minimize'}><svg viewBox="0 0 24 24" aria-hidden="true">{externalWindow ? <path d="M5 5l14 14M19 5L5 19"/> : <path d="M5 12h14"/>}</svg></button>
-        </div>
+        <SecondaryWindowControls title="USI Monitor" onDock={onDock} onPopOut={onPopOut} onHide={onToggle} externalWindow={externalWindow} />
       </div>
       
       <div className="usi-monitor-tabs">
@@ -346,7 +336,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
         </button>
       </div>
 
-      <div className="usi-monitor-content">
+      <div className="usi-monitor-content"><AnalysisInstructions guide={activeTab} />
         {activeTab === 'engine' && (
           <div className="engine-monitor-tab">
             {monitoredEngineIds.map((engineId, index) => {
@@ -369,7 +359,7 @@ export const TauriUsiMonitor: React.FC<TauriUsiMonitorProps> = ({
                     </div>
                   </div>
 
-                  <div className="last-command-item">
+                  <div className="last-command-item engine-received-output">
                     <label>Last Received: {formatTimestamp(lastReceived.timestamp)}</label>
                     <div className="command-text received-command">
                       {lastReceived.message}

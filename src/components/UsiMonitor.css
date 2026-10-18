@@ -514,3 +514,69 @@
     max-width: 150px;
   }
 }
+
+/* Sized monitor windows divide their available body equally between engines. */
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor {
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor > .usi-monitor-header,
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor > .usi-monitor-tabs {
+  flex-shrink: 0;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor > .usi-monitor-content {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor :is(.search-tab, .engine-monitor-tab) {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-section {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-section + .engine-section {
+  border-top: 2px solid var(--color-border-medium);
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-divider {
+  display: none;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-header {
+  flex-shrink: 0;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .search-table-container {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .no-search-info {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-monitor-tab .engine-section {
+  overflow: auto;
+}
+
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-received-output {
+  flex: 1 0 60px;
+  display: flex;
+  flex-direction: column;
+}
+:is(.secondary-panel-frame-floating, .usi-monitor-window) .usi-communication-monitor .engine-received-output .received-command {
+  flex: 1;
+  align-items: flex-start;
+}

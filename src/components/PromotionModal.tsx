@@ -25,9 +25,7 @@ const PromotionModal: React.FC<PromotionModalProps> = ({ onPromote, pieceType, p
   useEffect(() => {
     if (boardRef.current && boardContainerRef.current) {
       const squareElement = boardRef.current.getSquareRef(destinationSquareUsi);
-      if (squareElement) {
-        const squareRect = squareElement.getBoundingClientRect();
-        const boardRect = boardContainerRef.current.getBoundingClientRect(); // Use boardContainerRef
+      if (squareElement) { // Use boardContainerRef
 
         // Calculate modal position relative to the square
         // Centered horizontally above the square

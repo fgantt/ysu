@@ -1,0 +1,16 @@
+.review-moves { list-style: none; padding: 0; }
+.review-moves li { display: flex; flex-direction: column; gap: 6px; padding: 10px; margin: 8px 0; border: 1px solid var(--color-border-light); border-radius: 6px; }
+.review-moves li.review-flagged { border-color: var(--color-warning-text); }
+.review-moves li div { display: flex; flex-wrap: wrap; gap: 6px; }
+.review-moves button { padding: 5px 8px; }
+.review-moves small { color: var(--color-text-muted); }
+
+.review-navigation { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin: 12px 0; border: 1px solid var(--color-border-light); border-radius: 6px; }
+.review-navigation label { display: flex; flex-direction: column; gap: 6px; }
+.review-navigation p { margin: 0; }
+.review-navigation code { display: block; overflow-wrap: anywhere; margin-top: 8px; }
+.review-navigation small { color: var(--color-text-muted); }
+.review-navigation button[aria-pressed="true"] { outline: 2px solid var(--color-text-primary); outline-offset: -2px; }
+.review-moves li[aria-current="step"] { box-shadow: inset 4px 0 var(--color-text-primary); }
+
+.review-navigation select { padding: 6px; max-width: 100%; color: var(--color-input-text); background: var(--color-input-bg); border: 1px solid var(--color-input-border); border-radius: 4px; }

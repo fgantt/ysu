@@ -1,0 +1,16 @@
+.variation-tree { margin-top: 1rem; border-top: 1px solid var(--color-border-light, #888); padding-top: .75rem; }
+.variation-tree ul { list-style: none; padding-left: 1rem; }
+.variation-tree nav { max-height: 320px; overflow: auto; }
+.variation-tree button[aria-pressed="true"] { font-weight: bold; outline: 2px solid var(--color-accent, #b79045); }
+.variation-actions, .variation-tree form { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+.variation-tree label { display: flex; flex-direction: column; gap: .25rem; }
+.variation-tree small { width: 100%; }
+.variation-transfer textarea { min-height: 120px; width: 100%; box-sizing: border-box; }
+.variation-tree button, .variation-tree input, .variation-tree textarea { background: var(--color-bg-panel); color: var(--color-text-primary); border: 1px solid var(--color-border-light); border-radius: 4px; padding: 5px 8px; }
+.variation-tree button { cursor: pointer; margin: 2px 0; }
+.variation-tree button:disabled { opacity: .5; cursor: default; }
+.variation-tree a { color: var(--color-accent); }
+.variation-tree p, .variation-tree small { color: var(--color-text-secondary); }
+
+.variation-tree form label:has(textarea) { flex: 1 1 100%; }
+.variation-tree form textarea { min-height: 90px; resize: vertical; }

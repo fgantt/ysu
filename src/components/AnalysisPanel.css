@@ -1,0 +1,9 @@
+.analysis-panel { min-height: 260px; }
+.analysis-panel-content { padding: 12px; overflow: auto; flex: 1; min-height: 0; color: var(--color-text-primary); }
+.analysis-panel-content p { font-size: 13px; color: var(--color-text-secondary); }
+.thinking-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 12px 0; }
+.thinking-metrics div { padding: 8px; border: 1px solid var(--color-border-light); border-radius: 4px; }
+.thinking-metrics dt { font-size: 12px; color: var(--color-text-muted); }
+.thinking-metrics dd { margin: 4px 0 0; font-variant-numeric: tabular-nums; }
+.thinking-line { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 12px; }
+.usi-monitor-window .analysis-panel { height: 100%; max-height: none; }

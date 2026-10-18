@@ -25,7 +25,6 @@ const HomePage: React.FC = () => {
     const stored = localStorage.getItem('shogi-sound-volume');
     return stored ? parseFloat(stored) : 0.9;
   });
-  const [gameLayout, setGameLayoutState] = useState<'classic' | 'compact'>((localStorage.getItem('shogi-game-layout') as any) || 'compact');
   
   // Recommendation engine state
   const [recommendationEngineId, setRecommendationEngineId] = useState<string | null>(() => {
@@ -155,12 +154,6 @@ const HomePage: React.FC = () => {
     document.body.style.backgroundAttachment = 'fixed';
   };
 
-  const handleSelectBoardBackground = (boardBackground: string) => {
-    setCurrentBoardBackground(boardBackground);
-    localStorage.setItem('shogi-board-background', boardBackground);
-    window.dispatchEvent(new Event('shogi-appearance-change'));
-  };
-
   const handlePieceThemeChange = (theme: string) => {
     setPieceLabelType(theme);
     localStorage.setItem('shogi-piece-label-type', theme);
@@ -200,11 +193,6 @@ const HomePage: React.FC = () => {
     setSoundVolumeState(volume);
     localStorage.setItem('shogi-sound-volume', volume.toString());
     setVolume(volume);
-  };
-
-  const handleGameLayoutChange = (layout: 'classic' | 'compact') => {
-    setGameLayoutState(layout);
-    localStorage.setItem('shogi-game-layout', layout);
   };
 
   const handleBoardBackgroundChange = (background: string) => {
@@ -295,8 +283,6 @@ const HomePage: React.FC = () => {
           onShowPieceTooltipsChange={handleShowPieceTooltipsChange}
           showEngineThinking={showEngineThinking}
           onShowEngineThinkingChange={handleShowEngineThinkingChange}
-          gameLayout={gameLayout}
-          onGameLayoutChange={handleGameLayoutChange}
           soundsEnabled={soundsEnabled}
           onSoundsEnabledChange={handleSoundsEnabledChange}
           soundVolume={soundVolume}

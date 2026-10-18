@@ -1,78 +1,69 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ShogiControllerProvider } from '../context/ShogiControllerContext';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ShogiController } from '../usi/controller';
-import { Position, Record, Square } from 'tsshogi';
 import GamePage from './GamePage';
-
-// Mock tsshogi since it cannot be used in vitest
-vi.mock('tsshogi', async () => {
-  const original = await vi.importActual('tsshogi');
-  const Position = vi.fn();
-  Position.prototype.get = vi.fn();
-  Position.prototype.moves = vi.fn();
-  Position.prototype.toSFEN = vi.fn();
-  Position.prototype.clone = vi.fn().mockReturnThis();
-
-  const Square = {
-    fromRowCol: vi.fn((r, c) => ({ row: r, col: c, toUSI: () => `${9-c}${String.fromCharCode('a'.charCodeAt(0) + r)}`})),
-  };
-
-  const Record = vi.fn(() => ({
-    moves: [],
-  }));
-
-  return {
-    ...original,
-    Position,
-    Square,
-    Record,
-    PieceType: original.PieceType,
-  };
-});
+import { invoke } from '@tauri-apps/api/core';
+import { InitialPositionSFEN } from 'tsshogi';
+import type { StudyGameBranch } from '../utils/studyGame';
+vi.mock('./CandidateMovesHost', () => ({ CandidateMovesHost: ({ onLoadStudyGame }: { onLoadStudyGame: (value: StudyGameBranch) => void }) => <button onClick={() => onLoadStudyGame({ rootSfen: InitialPositionSFEN.STANDARD, moves: ['7g7f'], comments: ['Opening', 'Study note'], finalSfen: '', key: 'test' })}>Request study import</button> }));
+vi.mock('../utils/pieceThemes', async importOriginal => ({ ...await importOriginal<typeof import('../utils/pieceThemes')>(), getAvailablePieceThemes: vi.fn().mockResolvedValue([]) }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn().mockResolvedValue({ success: true, data: [] }) }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(() => {}), emit: vi.fn() }));
+vi.mock('@tauri-apps/api/webviewWindow', () => ({ WebviewWindow: { getByLabel: vi.fn().mockResolvedValue(null) } }));
+vi.mock('../utils/audio', () => ({ playPieceMoveSound: vi.fn(), playCheckmateSound: vi.fn(), playDrawSound: vi.fn(), setSoundsEnabled: vi.fn(), setVolume: vi.fn() }));
 
 describe('GamePage', () => {
-  let mockController: ShogiController;
-  let mockPosition: Position;
-
-  beforeEach(() => {
-    mockPosition = new Position();
-    // Create a mutable board
-    mockPosition.board = Array(9).fill(null).map(() => Array(9).fill(null));
-    mockPosition.board[6][8] = { kind: 'PAWN', color: 'black' }; // Black pawn at 1g (row 6, col 8)
-    mockPosition.turn = 'black';
-    mockPosition.hand = { black: [], white: [] };
-
-    const mockRecord = new Record();
-
-    mockController = {
-      on: vi.fn(),
-      off: vi.fn(),
-      getPosition: () => mockPosition,
-      getRecord: () => mockRecord,
-      handleUserMove: vi.fn(),
-      newGame: vi.fn(),
-    } as unknown as ShogiController;
+  beforeEach(() => vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} }));
+  afterEach(() => vi.unstubAllGlobals());
+  it('plays a legal move through the real controller and board', async () => {
+    const controller = new ShogiController();
+    await controller.initialize();
+    const move = vi.spyOn(controller, 'handleUserMove');
+    render(<MemoryRouter initialEntries={[{ pathname: '/game', state: { player1Type: 'human', player2Type: 'human' } }]}>
+      <ShogiControllerProvider controller={controller}>
+        <GamePage isUsiMonitorVisible={false} lastSentCommand="" lastReceivedCommand=""
+          communicationHistory={[]} sessions={[]} onToggleUsiMonitor={vi.fn()}
+          onDismissUsiMonitor={vi.fn()} clearUsiHistory={vi.fn()} />
+      </ShogiControllerProvider>
+    </MemoryRouter>);
+    fireEvent.click(await screen.findByTestId('square-6-8'));
+    fireEvent.click(screen.getByTestId('square-5-8'));
+    expect(move).toHaveBeenCalledWith('1g1f');
+    expect(controller.getPosition().sfen).toContain(' w ');
+  });
+  it('reviews a branch before replacement, cancels safely, then loads and continues playing', async () => {
+    let releaseStartup!: () => void;
+    const startup = new Promise<void>(resolve => { releaseStartup = resolve; });
+    vi.mocked(invoke).mockImplementation(async command => {
+      if (command === 'spawn_engine') await startup;
+      return { success: true, data: [{ id: 'analysis', name: 'Analysis', display_name: 'Analysis', enabled: true }] };
+    });
+    const controller = new ShogiController();
+    await controller.initialize();
+    const load = vi.spyOn(controller, 'loadStudyBranch');
+    render(<MemoryRouter initialEntries={[{ pathname: '/game', state: { player1Type: 'human', player2Type: 'human' } }]}>
+      <ShogiControllerProvider controller={controller}>
+        <GamePage isUsiMonitorVisible={false} lastSentCommand="" lastReceivedCommand="" communicationHistory={[]} sessions={[]} onToggleUsiMonitor={vi.fn()} onDismissUsiMonitor={vi.fn()} clearUsiHistory={vi.fn()} />
+      </ShogiControllerProvider>
+    </MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Request study import' }));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(load).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(load).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Request study import' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Replace game with this branch' }));
+    await waitFor(() => expect(load).toHaveBeenCalledWith(InitialPositionSFEN.STANDARD, ['7g7f'], ['Opening', 'Study note']));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(controller.getSessionSettings()).toMatchObject({ player1Type: 'human', player2Type: 'human', btime: 1800000, wtime: 1800000 });
+    await act(async () => { releaseStartup(); await startup; });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('stop_engine', expect.any(Object)));
+    expect(controller.getRecord().current.comment).toBe('Study note');
+    fireEvent.click(screen.getByTestId('square-2-6'));
+    fireEvent.click(screen.getByTestId('square-3-6'));
+    expect(controller.getPosition().sfen).toContain(' b ');
   });
 
-  it('renders the game page and handles a valid move', () => {
-    render(
-      <BrowserRouter>
-        <ShogiControllerProvider controller={mockController}>
-          <GamePage />
-        </ShogiControllerProvider>
-      </BrowserRouter>
-    );
-
-    // 1g is row 6, col 8.
-    // 1f is row 5, col 8.
-    const pawnSquare = screen.getByTestId('square-6-8');
-    const destinationSquare = screen.getByTestId('square-5-8');
-
-    fireEvent.click(pawnSquare);
-    fireEvent.click(destinationSquare);
-
-    expect(mockController.handleUserMove).toHaveBeenCalledWith('1g1f');
-  });
 });

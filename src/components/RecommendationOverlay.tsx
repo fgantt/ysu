@@ -51,8 +51,6 @@ const RecommendationOverlay: React.FC<RecommendationOverlayProps> = ({
       if (squareElement) {
         const squareRect = squareElement.getBoundingClientRect();
         const boardRect = boardRef.current.getBoundingClientRect();
-        const squareSize = boardSize.width / 9;
-        const pieceSize = squareRect.width * 0.8;
 
         setDropOverlayStyle({
           position: 'absolute',
@@ -127,9 +125,8 @@ const RecommendationOverlay: React.FC<RecommendationOverlayProps> = ({
     return pieceMap[pieceTypeStr] || null;
   };
 
+  const pieceSize = 70;
   if (recommendation.isDrop) {
-    const squareSize = boardSize.width / 9;
-    const pieceSize = squareSize * 0.8;
     const pieceType = getPieceTypeFromString(recommendation.pieceType || '');
     const player = currentPlayer === 'black' ? 'player1' : 'player2';
     

@@ -20,3 +20,5 @@
 .secondary-panel-frame-floating .usi-monitor { height: 100%; max-height: none; box-sizing: border-box; }
 .secondary-panel-frame-floating .usi-monitor-content { flex: 1; min-height: 0; max-height: none; }
 .secondary-panel-frame-floating::after { content: ''; position: absolute; right: 4px; bottom: 4px; width: 12px; height: 12px; pointer-events: none; background: repeating-linear-gradient(135deg, transparent 0 3px, var(--color-text-muted) 3px 4px); opacity: .55; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+
+.secondary-panel-dock[hidden] { display: none !important; }

@@ -1,0 +1,12 @@
+.piece-preview { padding: 16px; border-radius: 12px; border: 1px solid var(--color-border-medium); color: var(--color-text-primary); }
+.piece-preview-caption { color: var(--color-text-secondary); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; }
+.piece-preview-heading h4 { margin: 6px 0; font-size: 1.1rem; color: var(--color-text-primary); }
+.piece-preview-heading p { color: var(--color-text-secondary); font-size: .85rem; line-height: 1.5; margin: 6px 0 16px; }
+.piece-preview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 8px; }
+.piece-preview-pair { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.piece-preview-pieces { display: flex; align-items: center; gap: 5px; color: var(--color-text-secondary); }
+.piece-preview-label { color: var(--color-text-secondary); font-size: .8rem; }
+.piece-preview-attribution { color: var(--color-text-secondary); font-size: .8rem; line-height: 1.5; margin: 16px 0 0; }
+.piece-preview-attribution a { color: var(--color-accent); text-decoration: underline; }
+
+@media (max-width: 800px) { .piece-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

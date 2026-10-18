@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useSecondaryTransparency } from '../hooks/useSecondaryTransparency';
 import PiecePreview from './PiecePreview';
 import ThemeSelector from './ThemeSelector';
-import { useTheme, getThemeDisplayName, getThemeDescription, type Theme } from '../hooks/useTheme';
+import { useTheme } from '../hooks/useTheme';
+import { NEW_BOARD_BACKGROUNDS, NEW_WALLPAPERS } from '../data/backgroundArtwork';
+import { BackgroundGallery } from './BackgroundGallery';
+import { ColorThemePicker } from './ColorThemePicker';
 import { playPreviewSound } from '../utils/audio';
 import { EngineSelector } from './EngineSelector';
 import { EngineOptionsModal } from './EngineOptionsModal';
@@ -30,8 +34,6 @@ interface SettingsPanelProps {
   onShowPieceTooltipsChange: (show: boolean) => void;
   showEngineThinking: boolean;
   onShowEngineThinkingChange: (show: boolean) => void;
-  gameLayout: 'classic' | 'compact';
-  onGameLayoutChange: (layout: 'classic' | 'compact') => void;
   soundsEnabled: boolean;
   onSoundsEnabledChange: (enabled: boolean) => void;
   soundVolume: number;
@@ -61,8 +63,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onShowPieceTooltipsChange,
   showEngineThinking,
   onShowEngineThinkingChange,
-  gameLayout,
-  onGameLayoutChange,
   soundsEnabled,
   onSoundsEnabledChange,
   soundVolume,
@@ -73,6 +73,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   recommendationEngineOptions,
   onRecommendationEngineOptionsChange,
 }) => {
+  const { transparency, setTransparency } = useSecondaryTransparency();
   const [initialView] = useState(loadSettingsViewState);
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialView.activeTab);
   const [isBoardBackgroundCollapsed, setIsBoardBackgroundCollapsed] = useState(initialView.collapsed.boardBackground);
@@ -161,7 +162,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const loadEngines = async () => {
     try {
-      const response = await invoke<any>('get_engines');
+      const response = await invoke<{ success: boolean; data?: EngineConfig[] }>('get_engines');
       if (response.success && response.data) {
         setEngines(response.data);
         
@@ -231,15 +232,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }, 150); // 150ms delay after user stops moving the slider
   };
   
-  const getFileName = (path: string): string => {
-    const parts = path.split('/');
-    const fileNameWithExtension = parts[parts.length - 1];
-    const fileName = fileNameWithExtension.split('.')[0];
-    return fileName;
-  };
-
-  const themes: Theme[] = ['dynamic', 'light', 'dark', 'traditional', 'ocean', 'forest', 'midnight', 'sunset', 'cyberpunk', 'cherry', 'monochrome', 'sepia'];
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'appearance':
@@ -251,23 +243,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <span className={`collapse-arrow ${isColorThemeCollapsed ? 'collapsed' : ''}`}>&#9660;</span>
               </h3>
               {!isColorThemeCollapsed && (
-                <div className="setting-group" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                  {themes.map((themeOption) => (
-                    <label key={themeOption} className="notation-option" style={{ cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        value={themeOption}
-                        checked={theme === themeOption}
-                        onChange={() => setTheme(themeOption)}
-                      />
-                      <div className="notation-label">
-                        <span className="notation-name">{getThemeDisplayName(themeOption)}</span>
-                        <span className="notation-example">{getThemeDescription(themeOption)}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
+                <ColorThemePicker theme={theme} onChange={setTheme} />
+                )}
             </section>
 
             <section>
@@ -277,11 +254,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </h3>
               {!isPieceThemesCollapsed && (
                 <>
+                  <PiecePreview theme={pieceThemeType} />
                   <ThemeSelector 
                     selectedTheme={pieceThemeType} 
                     onThemeChange={onPieceThemeTypeChange} 
                   />
-                  <PiecePreview theme={pieceThemeType} />
                 </>
               )}
             </section>
@@ -292,29 +269,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         return (
           <>
             <section>
-              <h3>Game Layout</h3>
-              <div className="setting-group">
-                <label>
-                  <input
-                    type="radio"
-                    value="classic"
-                    checked={gameLayout === 'classic'}
-                    onChange={() => onGameLayoutChange('classic')}
-                  />
-                  Slim Shogi
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    value="compact"
-                    checked={gameLayout === 'compact'}
-                    onChange={() => onGameLayoutChange('compact')}
-                  />
-                  Classic Shogi
-                </label>
-              </div>
+              <h3>Secondary window transparency</h3>
+              <label>Transparency: {transparency}%<input aria-label="Secondary window transparency" type="range" min="0" max="60" step="5" value={transparency} onChange={event => setTransparency(Number(event.target.value))} /></label>
+              <p>Applies to all analysis windows, including native pop-outs. 0% is fully opaque. Text and controls fade with the window.</p>
+              <button onClick={() => setTransparency(0)} disabled={transparency === 0}>Restore opaque windows</button>
             </section>
-
             <section>
               <h3>Show Attacked Pieces</h3>
               <div className="setting-group">
@@ -457,46 +416,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       case 'backgrounds':
         return (
           <>
+            <div className="settings-page-intro"><h3>Make the game your own</h3><p>Choose a board surface and a scene for your workspace. Your selections apply immediately.</p></div>
             <section>
-              <h3 onClick={toggleBoardBackgroundCollapse} style={{ cursor: 'pointer' }}>
-                Board Background
-                <span className={`collapse-arrow ${isBoardBackgroundCollapsed ? 'collapsed' : ''}`}>&#9660;</span>
-              </h3>
-              {!isBoardBackgroundCollapsed && (
-                <div className="setting-group setting-thumbnails">
-                  {boardBackgroundList.map((bg, index) => (
-                    <img
-                      key={index}
-                      src={bg}
-                      alt={`Board Background ${index + 1}`}
-                      className={`thumbnail ${bg === currentBoardBackground ? 'selected-thumbnail' : ''}`}
-                      onClick={() => onSelectBoardBackground(bg)}
-                      title={getFileName(bg)}
-                    />
-                  ))}
-                </div>
-              )}
+              <h3><button className="settings-section-toggle" onClick={toggleBoardBackgroundCollapse} aria-expanded={!isBoardBackgroundCollapsed}>Board Background<span className={`collapse-arrow ${isBoardBackgroundCollapsed ? 'collapsed' : ''}`} aria-hidden="true">&#9660;</span></button></h3>
+              {!isBoardBackgroundCollapsed && <BackgroundGallery kind="board" images={[...NEW_BOARD_BACKGROUNDS, ...boardBackgroundList]} current={currentBoardBackground} onSelect={onSelectBoardBackground} />}
             </section>
-
             <section>
-              <h3 onClick={toggleWallpaperCollapse} style={{ cursor: 'pointer' }}>
-                Wallpaper
-                <span className={`collapse-arrow ${isWallpaperCollapsed ? 'collapsed' : ''}`}>&#9660;</span>
-              </h3>
-              {!isWallpaperCollapsed && (
-                <div className="setting-group setting-thumbnails">
-                  {wallpaperList.map((wp, index) => (
-                    <img
-                      key={index}
-                      src={wp}
-                      alt={`Wallpaper ${index + 1}`}
-                      className={`thumbnail ${wp === currentWallpaper ? 'selected-thumbnail' : ''}`}
-                      onClick={() => onSelectWallpaper(wp)}
-                      title={getFileName(wp)}
-                    />
-                  ))}
-                </div>
-              )}
+              <h3><button className="settings-section-toggle" onClick={toggleWallpaperCollapse} aria-expanded={!isWallpaperCollapsed}>Wallpaper<span className={`collapse-arrow ${isWallpaperCollapsed ? 'collapsed' : ''}`} aria-hidden="true">&#9660;</span></button></h3>
+              {!isWallpaperCollapsed && <BackgroundGallery kind="wallpaper" images={[...NEW_WALLPAPERS, ...wallpaperList]} current={currentWallpaper} onSelect={onSelectWallpaper} />}
             </section>
           </>
         );
@@ -552,14 +479,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     <div className="settings-overlay">
       <div className="settings-panel settings-panel-tabbed">
         <div className="settings-header">
-          <h2>Settings</h2>
+          <h2>Settings</h2><p className="settings-header-subtitle">Personalize your Shogi workspace</p>
         </div>
-        <button className="settings-close-btn" onClick={closeSettings}>×</button>
+        <button aria-label="Close settings" title="Close settings" className="settings-close-btn" onClick={closeSettings}>×</button>
         
         <div className="settings-content">
           <div className="settings-tabs">
             <button 
               className={`settings-tab ${activeTab === 'appearance' ? 'active' : ''}`}
+              aria-current={activeTab === 'appearance' ? 'page' : undefined}
               onClick={() => switchTab('appearance')}
             >
               <span className="tab-icon">🎨</span>
@@ -567,6 +495,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
             <button 
               className={`settings-tab ${activeTab === 'display' ? 'active' : ''}`}
+              aria-current={activeTab === 'display' ? 'page' : undefined}
               onClick={() => switchTab('display')}
             >
               <span className="tab-icon">⚙️</span>
@@ -574,6 +503,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
             <button 
               className={`settings-tab ${activeTab === 'notation' ? 'active' : ''}`}
+              aria-current={activeTab === 'notation' ? 'page' : undefined}
               onClick={() => switchTab('notation')}
             >
               <span className="tab-icon">📝</span>
@@ -581,6 +511,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
             <button 
               className={`settings-tab ${activeTab === 'backgrounds' ? 'active' : ''}`}
+              aria-current={activeTab === 'backgrounds' ? 'page' : undefined}
               onClick={() => switchTab('backgrounds')}
             >
               <span className="tab-icon">🖼️</span>
@@ -588,6 +519,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </button>
             <button 
               className={`settings-tab ${activeTab === 'engines' ? 'active' : ''}`}
+              aria-current={activeTab === 'engines' ? 'page' : undefined}
               onClick={() => switchTab('engines')}
             >
               <span className="tab-icon">🤖</span>

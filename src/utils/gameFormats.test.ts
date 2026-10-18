@@ -1,11 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { 
-  parseKIF, 
-  parseCSA, 
-  generateKIF, 
-  generateCSA,
+import {
+  parseKIF,
+  parseCSA,
   kifToUsiMove,
-  detectFormat 
+  detectFormat
 } from './gameFormats';
 
 // Test data from Shogi DB2 - real game between Ishida and Fujii
@@ -126,13 +124,13 @@ $START_TIME:2018/06/04 20:00:00
 $END_TIME:2018/06/05 7:36:00
 $OPENING:角換わり腰掛銀
 P1-KY-KE-GI-KI-OU-KI-GI-KE-KY
-P2 * -HI *  *  *  *  * -KA * 
+P2 * -HI *  *  *  *  * -KA *
 P3-FU-FU-FU-FU-FU-FU-FU-FU-FU
-P4 *  *  *  *  *  *  *  *  * 
-P5 *  *  *  *  *  *  *  *  * 
-P6 *  *  *  *  *  *  *  *  * 
+P4 *  *  *  *  *  *  *  *  *
+P5 *  *  *  *  *  *  *  *  *
+P6 *  *  *  *  *  *  *  *  *
 P7+FU+FU+FU+FU+FU+FU+FU+FU+FU
-P8 * +KA *  *  *  *  * +HI * 
+P8 * +KA *  *  *  *  * +HI *
 P9+KY+KE+GI+KI+OU+KI+GI+KE+KY
 +
 +2726FU
@@ -233,7 +231,6 @@ P9+KY+KE+GI+KI+OU+KI+GI+KE+KY
 -0077KI
 %TORYO`;
 
-const expectedFinalSFEN = 'l7l/2S2k1+P1/3gpgp2/p2s3p1/8L/PG1b1PPP1/1PgKP4/5+p3/L6R1 b 1R2S3N4P1b1n2p 97';
 
 describe('Game Formats', () => {
   describe('Format Detection', () => {
@@ -251,7 +248,7 @@ describe('Game Formats', () => {
       // Test first 10 moves from the game (USI format: numeric files, letter ranks)
       const expectedMoves = [
         '2g2f', // ２六歩(27) -> 2g2f
-        '8c8d', // ８四歩(83) -> 8c8d  
+        '8c8d', // ８四歩(83) -> 8c8d
         '7g7f', // ７六歩(77) -> 7g7f
         '8d8e', // ８五歩(84) -> 8d8e
         '8h7g', // ７七角(88) -> 8h7g
@@ -264,7 +261,7 @@ describe('Game Formats', () => {
 
       const kifMoves = [
         '２六歩(27)',
-        '８四歩(83)', 
+        '８四歩(83)',
         '７六歩(77)',
         '８五歩(84)',
         '７七角(88)',
@@ -302,21 +299,21 @@ describe('Game Formats', () => {
       ];
 
       const expectedDropMoves = [
-        'B*e6',
-        'P*a4', 
-        'P*c3',
-        'P*d7',
-        'P*f3',
-        'S*g2',
-        'P*h7',
-        'P*g7',
-        'P*g8',
-        'P*g7',
-        'S*g8',
-        'N*h6',
-        'S*g7',
-        'B*f6',
-        'G*g7'
+        'B*5f',
+        'P*1d',
+        'P*3c',
+        'P*4g',
+        'P*6c',
+        'S*7b',
+        'P*8g',
+        'P*7g',
+        'P*7h',
+        'P*7g',
+        'S*7h',
+        'N*8f',
+        'S*7g',
+        'B*6f',
+        'G*7g'
       ];
 
       dropMoves.forEach((kifMove, index) => {
@@ -336,11 +333,11 @@ describe('Game Formats', () => {
       ];
 
       const expectedPromotionMoves = [
-        'b5a3+',
-        'c4d3+',
-        'a4a3+',
-        'g6g7+',
-        'h5g7+'
+        '2e1c+',
+        '3d4c+',
+        '1d1c+',
+        '同76+',
+        '同85+'
       ];
 
       promotionMoves.forEach((kifMove, index) => {
@@ -358,17 +355,17 @@ describe('Game Formats', () => {
   describe('KIF Parsing', () => {
     it('should parse KIF game correctly', () => {
       const result = parseKIF(testKIF);
-      
+
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect(result.data!.metadata.blackPlayer).toBe('石田直裕 五段');
-      expect(result.data!.metadata.whitePlayer).toBe('藤井聡太 七段');
-      expect(result.data!.metadata.event).toBe('竜王戦');
-      expect(result.data!.metadata.site).toBe('関西将棋会館');
-      
+      expect(result.data!.metadata.player1Name).toBe('石田直裕 五段');
+      expect(result.data!.metadata.player2Name).toBe('藤井聡太 七段');
+      expect(result.data!.metadata.gameType).toBe('竜王戦');
+      expect(result.data!.metadata.location).toBe('関西将棋会館');
+
       // console.log(`Parsed ${result.data!.moves.length} moves (expected 97)`);
       // console.log('Last few moves:', result.data!.moves.slice(-5));
-      
+
       expect(result.data!.moves.length).toBe(97);
       expect(result.data!.moves[96]).toBe('resign'); // Last move should be resignation
     });
@@ -376,14 +373,14 @@ describe('Game Formats', () => {
     it('should parse first 10 moves correctly', () => {
       const result = parseKIF(testKIF);
       expect(result.success).toBe(true);
-      
+
       const expectedFirstMoves = [
-        'b7b6', 'h3h4', 'g7g6', 'h4h5', 'h8g7',
-        'c3c4', 'g9f8', 'd1c2', 'f9g8', 'b2g7+'
+        '2g2f', '8c8d', '7g7f', '8d8e', '8h7g',
+        '3c3d', '7i6h', '4a3b', '6i7h', '2b7g+'
       ];
 
       const actualFirstMoves = result.data!.moves.slice(0, 10);
-      
+
       expectedFirstMoves.forEach((expected, index) => {
         console.log(`Move ${index + 1}: expected ${expected}, got ${actualFirstMoves[index]}`);
         expect(actualFirstMoves[index]).toBe(expected);
@@ -394,17 +391,17 @@ describe('Game Formats', () => {
   describe('CSA Parsing', () => {
     it('should parse CSA game correctly', () => {
       const result = parseCSA(testCSA);
-      
+
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect(result.data!.metadata.blackPlayer).toBe('石田直裕 五段');
-      expect(result.data!.metadata.whitePlayer).toBe('藤井聡太 七段');
-      expect(result.data!.metadata.event).toBe('竜王戦');
-      expect(result.data!.metadata.site).toBe('関西将棋会館');
-      
+      expect(result.data!.metadata.player1Name).toBe('石田直裕 五段');
+      expect(result.data!.metadata.player2Name).toBe('藤井聡太 七段');
+      expect(result.data!.metadata.gameType).toBe('竜王戦');
+      expect(result.data!.metadata.location).toBe('関西将棋会館');
+
       // console.log(`CSA parsed ${result.data!.moves.length} moves (expected 97)`);
       // console.log('Last few CSA moves:', result.data!.moves.slice(-5));
-      
+
       expect(result.data!.moves.length).toBe(97);
       expect(result.data!.moves[96]).toBe('resign');
     });
@@ -412,14 +409,14 @@ describe('Game Formats', () => {
     it('should parse first 10 CSA moves correctly', () => {
       const result = parseCSA(testCSA);
       expect(result.success).toBe(true);
-      
+
       const expectedFirstMoves = [
-        'b7b6', 'h3h4', 'g7g6', 'h4h5', 'h8g7',
-        'c3c4', 'g9f8', 'd1c2', 'f9g8', 'b2g7+'
+        '2g2f', '8c8d', '7g7f', '8d8e', '8h7g',
+        '3c3d', '7i6h', '4a3b', '6i7h', '2b7g+'
       ];
 
       const actualFirstMoves = result.data!.moves.slice(0, 10);
-      
+
       expectedFirstMoves.forEach((expected, index) => {
         console.log(`CSA Move ${index + 1}: expected ${expected}, got ${actualFirstMoves[index]}`);
         expect(actualFirstMoves[index]).toBe(expected);
@@ -431,15 +428,15 @@ describe('Game Formats', () => {
     it('should produce identical moves from KIF and CSA formats', () => {
       const kifResult = parseKIF(testKIF);
       const csaResult = parseCSA(testCSA);
-      
+
       expect(kifResult.success).toBe(true);
       expect(csaResult.success).toBe(true);
-      
+
       const kifMoves = kifResult.data!.moves;
       const csaMoves = csaResult.data!.moves;
-      
+
       expect(kifMoves.length).toBe(csaMoves.length);
-      
+
       // Check first 20 moves for consistency
       for (let i = 0; i < Math.min(20, kifMoves.length); i++) {
         // console.log(`Move ${i + 1}: KIF=${kifMoves[i]}, CSA=${csaMoves[i]}`);
@@ -450,17 +447,17 @@ describe('Game Formats', () => {
     it('should produce identical metadata from KIF and CSA formats', () => {
       const kifResult = parseKIF(testKIF);
       const csaResult = parseCSA(testCSA);
-      
+
       expect(kifResult.success).toBe(true);
       expect(csaResult.success).toBe(true);
-      
+
       const kifMetadata = kifResult.data!.metadata;
       const csaMetadata = csaResult.data!.metadata;
-      
-      expect(kifMetadata.blackPlayer).toBe(csaMetadata.blackPlayer);
-      expect(kifMetadata.whitePlayer).toBe(csaMetadata.whitePlayer);
-      expect(kifMetadata.event).toBe(csaMetadata.event);
-      expect(kifMetadata.site).toBe(csaMetadata.site);
+
+      expect(kifMetadata.player1Name).toBe(csaMetadata.player1Name);
+      expect(kifMetadata.player2Name).toBe(csaMetadata.player2Name);
+      expect(kifMetadata.gameType).toBe(csaMetadata.gameType);
+      expect(kifMetadata.location).toBe(csaMetadata.location);
     });
   });
 });

@@ -1,0 +1,2 @@
+.game-controls button kbd { margin-left: auto; padding-left: 16px; white-space: nowrap; font: inherit; font-size: .8em; opacity: .75; }
+.compact-menu-popover .game-controls button { display: flex; align-items: center; gap: 6px; }

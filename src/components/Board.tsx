@@ -1,3 +1,4 @@
+import { backgroundImageUrl } from '../data/backgroundArtwork';
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import { ImmutablePosition, Square } from 'tsshogi';
 import PieceComponent from './Piece';
@@ -131,7 +132,7 @@ const Board = forwardRef<BoardRef, BoardProps>(({ position, onSquareClick, onDra
       
       if (move && 'from' in move && 'to' in move) {
         // Regular move has from and to squares
-        return { from: move.from, to: move.to };
+        return { from: move.from instanceof Square ? move.from : null, to: move.to };
       }
       
       return { from: null, to: null };
@@ -158,7 +159,7 @@ const Board = forwardRef<BoardRef, BoardProps>(({ position, onSquareClick, onDra
         <div 
           className="board"
           style={boardBackground ? {
-            backgroundImage: `url('${boardBackground}'), linear-gradient(90deg, #8b4513, #a45e32 48%, #8b4513)`,
+            backgroundImage: `url('${backgroundImageUrl(boardBackground)}'), linear-gradient(90deg, #8b4513, #a45e32 48%, #8b4513)`,
             backgroundSize: 'cover',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center center'

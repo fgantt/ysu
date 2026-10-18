@@ -1,3 +1,5 @@
+import { NEW_BOARD_BACKGROUNDS, NEW_WALLPAPERS } from '../data/backgroundArtwork';
+
 /**
  * Utility functions for dynamically loading wallpaper and board images
  * Uses Tauri commands to read directories at runtime, allowing users to add their own images
@@ -82,10 +84,10 @@ export async function loadWallpaperImages(): Promise<string[]> {
     }
     
     // Filter by allowed extensions for wallpapers
-    return filterByExtensions(wallpapers, ['jpg', 'png', 'svg', 'jpeg']);
+    return [...new Set([...NEW_WALLPAPERS, ...filterByExtensions(wallpapers, ['jpg', 'png', 'svg', 'jpeg'])])];
   } catch (error) {
     console.error('Error loading wallpaper images:', error);
-    return [];
+    return [...NEW_WALLPAPERS];
   }
 }
 
@@ -107,23 +109,20 @@ export async function loadBoardImages(): Promise<string[]> {
     }
     
     // Filter by allowed extensions for boards
-    return filterByExtensions(boards, ['jpg', 'png', 'svg', 'jpeg', 'webp']);
+    return [...new Set([...NEW_BOARD_BACKGROUNDS, ...filterByExtensions(boards, ['jpg', 'png', 'svg', 'jpeg', 'webp'])])];
   } catch (error) {
     console.error('Error loading board images:', error);
-    return [];
+    return [...NEW_BOARD_BACKGROUNDS];
   }
 }
 
 /**
- * @deprecated Fallback functions are no longer needed - images are loaded dynamically at runtime
- * These are kept for backward compatibility but should not be used
+ * Bundled artwork remains available without native directory discovery.
  */
 export function getFallbackWallpaperImages(): string[] {
-  console.warn('getFallbackWallpaperImages() is deprecated - images are now loaded dynamically');
-  return [];
+  return [...NEW_WALLPAPERS];
 }
 
 export function getFallbackBoardImages(): string[] {
-  console.warn('getFallbackBoardImages() is deprecated - images are now loaded dynamically');
-  return [];
+  return [...NEW_BOARD_BACKGROUNDS];
 }

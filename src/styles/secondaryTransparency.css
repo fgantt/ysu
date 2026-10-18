@@ -1,0 +1,7 @@
+/* Apply once per panel so nested tables and controls do not multiply opacity. */
+.secondary-panel-frame > .usi-monitor,
+.usi-monitor-window > .usi-monitor { opacity: var(--secondary-window-opacity, 1); }
+html.secondary-native-surface,
+html.secondary-native-surface body,
+html.secondary-native-surface #root,
+html.secondary-native-surface .usi-monitor-window { background: transparent !important; }

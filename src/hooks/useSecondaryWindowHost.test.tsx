@@ -1,0 +1,54 @@
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { expect, it, vi } from 'vitest';
+import { useSecondaryWindowHost, type SecondaryWindowConfig } from './useSecondaryWindow';
+const mock = vi.hoisted(() => ({ closed: null as null | ((event: { payload?: { redock?: boolean } }) => void), lookup: vi.fn(async () => ({ show: vi.fn(), setFocus: vi.fn() })) }));
+vi.mock('@tauri-apps/api/event', () => ({ emitTo: vi.fn(async () => {}), listen: vi.fn(async (_name, handler) => { if (_name === 'closed') mock.closed = handler; return () => {}; }) }));
+vi.mock('@tauri-apps/api/webviewWindow', () => ({ WebviewWindow: { getByLabel: mock.lookup } }));
+const config: SecondaryWindowConfig = { label: 'test', panelId: 'test-panel', route: '/monitor/test', queryKey: 'data', updateEvent: 'update', closeEvent: 'closed', boundsKey: 'bounds', title: 'Test', errorNoun: 'test', defaultWidth: 600, defaultHeight: 400, minWidth: 300, minHeight: 200 };
+it('returns to the original dock without dismissing, and treats ordinary close as hide', async () => {
+  const dismiss = vi.fn(), returned = vi.fn(), docked = vi.fn();
+  window.addEventListener('secondary-panel:dock', docked);
+  const view = renderHook(() => useSecondaryWindowHost(config, {}, dismiss, returned));
+  await waitFor(() => expect(view.result.current.poppedOut).toBe(true));
+  act(() => mock.closed?.({ payload: { redock: true } }));
+  expect(view.result.current.poppedOut).toBe(false);
+  expect(returned).toHaveBeenCalledOnce(); expect(dismiss).not.toHaveBeenCalled();
+  expect((docked.mock.calls[0][0] as CustomEvent<string>).detail).toBe('test-panel');
+  view.rerender();
+  expect(view.result.current.poppedOut).toBe(false);
+  act(() => mock.closed?.({}));
+  expect(dismiss).toHaveBeenCalledOnce();
+  window.removeEventListener('secondary-panel:dock', docked);
+});
+
+it('toggles docked visibility and restores the same popped-out window without redocking', async () => {
+  const dismiss = vi.fn(), show = vi.fn(), close = vi.fn(async () => {}), hide = vi.fn(async () => {}), nativeShow = vi.fn(async () => {});
+  mock.lookup.mockResolvedValueOnce(null as never);
+  const candidateConfig = { ...config, label: 'candidate-monitor' };
+  const view = renderHook(({ visible }) => useSecondaryWindowHost(candidateConfig, {}, dismiss, show, { visible, onShow: show }), { initialProps: { visible: false } });
+  await act(async () => { await Promise.resolve(); });
+  act(() => window.dispatchEvent(new CustomEvent('secondary-view:toggle', { detail: 'candidates' })));
+  expect(show).toHaveBeenCalledOnce();
+  view.rerender({ visible: true });
+  act(() => window.dispatchEvent(new CustomEvent('secondary-view:toggle', { detail: 'candidates' })));
+  expect(dismiss).toHaveBeenCalledOnce();
+  expect(close).not.toHaveBeenCalled();
+  view.unmount();
+
+  dismiss.mockClear(); show.mockClear();
+  mock.lookup.mockResolvedValue({ show: nativeShow, setFocus: vi.fn(), close, hide } as never);
+  const native = renderHook(({ visible }) => useSecondaryWindowHost(candidateConfig, {}, dismiss, show, { visible, onShow: show }), { initialProps: { visible: true } });
+  await waitFor(() => expect(native.result.current.poppedOut).toBe(true));
+  await act(async () => { window.dispatchEvent(new CustomEvent('secondary-view:toggle', { detail: 'candidates' })); });
+  expect(hide).toHaveBeenCalledOnce();
+  expect(close).not.toHaveBeenCalled();
+  expect(dismiss).toHaveBeenCalledOnce();
+  expect(show).not.toHaveBeenCalled();
+  expect(native.result.current.poppedOut).toBe(true);
+  native.rerender({ visible: false });
+  await act(async () => { window.dispatchEvent(new CustomEvent('secondary-view:toggle', { detail: 'candidates' })); });
+  expect(nativeShow).toHaveBeenCalledOnce();
+  expect(show).toHaveBeenCalledOnce();
+  expect(close).not.toHaveBeenCalled();
+  expect(native.result.current.poppedOut).toBe(true);
+});

@@ -1,3 +1,4 @@
+import { createStudyGameRecord } from '../utils/studyGame';
 import { Record, InitialPositionSFEN, Move, ImmutablePosition, Square, PieceType as TsshogiPieceType, Color } from 'tsshogi';
 import { EventEmitter } from '../utils/events';
 
@@ -52,6 +53,13 @@ export class ShogiController extends EventEmitter {
 
   public getPosition(): ImmutablePosition {
     return this.record.position;
+  }
+
+  public getSessionSettings() {
+    return { player1Type: this.player1Type, player2Type: this.player2Type,
+      player1Level: this.player1Level, player2Level: this.player2Level,
+      btime: this.btime, wtime: this.wtime, byoyomi: this.byoyomi,
+      gameOver: this.gameOver, disableAutoEngineMove: this.disableAutoEngineMove };
   }
 
   public getRecord(): Record {
@@ -394,6 +402,21 @@ export class ShogiController extends EventEmitter {
       // AI move requests handled by Tauri engines in GamePage
   }
 
+  public loadStudyBranch(rootSfen: string, moves: string[], comments: string[] = []): void {
+    const next = createStudyGameRecord(rootSfen, moves, comments);
+    this.record = next;
+    this.gameOver = false;
+    this.currentRecommendation = null;
+    this.positionHistory.clear();
+    next.goto(0);
+    this.updatePositionHistory();
+    for (let ply = 1; ply <= moves.length; ply++) {
+      next.goto(ply);
+      this.updatePositionHistory();
+    }
+    this.emitStateChanged();
+  }
+
   public async loadSfen(sfen: string): Promise<void> {
     const recordResult = Record.newByUSI(`sfen ${sfen}`);
     if (recordResult instanceof Error) {
@@ -421,66 +444,6 @@ export class ShogiController extends EventEmitter {
 
   private stopAllEngines(): void {
     // Engine management removed - handled by Tauri engines in GamePage
-  }
-
-  private parseRecommendation(usiMove: string): void {
-    try {
-      console.log('Parsing recommendation move:', usiMove);
-      console.log('Current position SFEN:', this.record.position.sfen);
-      console.log('Current player turn:', this.record.position.sfen.includes(' b ') ? 'Player 1 (Black)' : 'Player 2 (White)');
-      
-      // Clear timeout since we got a response
-      if (this.recommendationTimeout) {
-        clearTimeout(this.recommendationTimeout);
-        this.recommendationTimeout = null;
-      }
-
-      // Parse USI move to get from and to squares
-      const move = this.record.position.createMoveByUSI(usiMove);
-      console.log('Parsed move:', move);
-      
-      if (move && 'to' in move) {
-        const fromSquare = typeof move.from === 'object' && 'x' in move.from 
-          ? move.from as Square 
-          : null;
-        const toSquare = move.to as Square;
-        
-        // Check if this is a drop move (from is null or not a Square)
-        const isDrop = fromSquare === null;
-        let pieceType = '';
-        
-        if (isDrop) {
-          // Extract piece type from USI move string (e.g., "P*5d" -> "P")
-          const match = usiMove.match(/^([A-Z])\*/);
-          pieceType = match ? match[1] : '';
-        }
-        
-        // Check if this is a promotion move (USI move ends with '+')
-        const isPromotion = usiMove.endsWith('+');
-        
-        console.log('Recommendation squares:', { from: fromSquare, to: toSquare, isDrop, pieceType, isPromotion });
-        
-        this.currentRecommendation = {
-          from: fromSquare,
-          to: toSquare,
-          isDrop,
-          pieceType,
-          isPromotion
-        };
-        console.log('Set current recommendation:', this.currentRecommendation);
-        console.log('Recommendation type after setting:', typeof this.currentRecommendation);
-        console.log('Recommendation is null after setting?', this.currentRecommendation === null);
-        console.log('Recommendation is undefined after setting?', this.currentRecommendation === undefined);
-        this.emitStateChanged();
-        this.emit('recommendationReceived');
-      } else {
-        console.log('Move parsing failed - invalid move structure');
-        console.log('Move object:', move);
-        console.log('Move has "to" property:', move && 'to' in move);
-      }
-    } catch (error) {
-      console.error('Error parsing recommendation move:', error);
-    }
   }
 
   private emitStateChanged(): void {

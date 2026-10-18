@@ -14,8 +14,7 @@ import {
   sendUsiCommand, 
   requestEngineMove, 
   parseBestMove, 
-  parseEngineInfo,
-  getBuiltinEnginePath 
+  parseEngineInfo
 } from '../utils/tauriEngine';
 import type { CommandResponse, EngineConfig } from '../types/engine';
 

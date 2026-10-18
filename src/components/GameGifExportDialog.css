@@ -1,0 +1,33 @@
+.gif-export-overlay { position: fixed; inset: 0; z-index: 1300; display: grid; place-items: center; background: var(--color-bg-overlay); }
+.gif-export-dialog { width: min(560px, 92vw); border: 1px solid var(--color-border-light); border-radius: 10px; background: var(--color-bg-panel); color: var(--color-text-primary); box-shadow: var(--shadow-xl); }
+.gif-export-header { display: flex; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--color-border-light); }
+.gif-export-header h2, .gif-export-header p { margin: 0; }
+.gif-export-header p { margin-top: 4px; color: var(--color-text-muted); font-size: 13px; }
+.gif-export-header button { border: 0; background: transparent; color: var(--color-text-primary); font-size: 24px; cursor: pointer; }
+.gif-export-options { display: flex; flex-wrap: wrap; gap: 16px 24px; padding: 22px 24px; }
+.gif-export-options label { display: flex; align-items: center; gap: 8px; }
+.gif-export-note { flex-basis: 100%; margin: 0; color: var(--color-text-muted); font-size: 13px; }
+.gif-export-error { margin: 0 24px 16px; padding: 10px; border-radius: 6px; background: var(--color-error-bg); color: var(--color-error-text); }
+.gif-export-progress { height: 6px; margin: 0 24px; overflow: hidden; border-radius: 3px; background: var(--color-bg-card); }
+.gif-export-progress span { display: block; height: 100%; background: var(--color-accent); transition: width .15s; }
+.gif-export-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 24px; border-top: 1px solid var(--color-border-light); }
+.gif-export-actions button { padding: 10px 18px; border: 1px solid var(--color-border-light); border-radius: 6px; background: var(--color-button-secondary); color: var(--color-button-secondary-text); cursor: pointer; }
+.gif-export-actions .gif-export-primary { border: 0; background: var(--color-button-primary); color: var(--color-button-primary-text); }
+.gif-export-actions button:disabled { opacity: .55; cursor: wait; }
+
+.gif-export-headless { position: fixed; inset: 0; z-index: 1390; pointer-events: none; }
+.gif-export-status { position: fixed; right: 18px; bottom: 18px; z-index: 1400; pointer-events: auto; padding: 9px 13px; border: 1px solid var(--color-border-light); border-radius: 6px; background: var(--color-bg-panel); color: var(--color-text-primary); box-shadow: var(--shadow-md); font-size: 13px; }
+.gif-export-status button { margin-left: 10px; }
+
+/* Keep the live renderer invisible, but in WebKit's paintable viewport. The
+   html-to-image clone overrides opacity and z-index during frame capture. */
+.gif-export-stage { position: fixed; left: 0; top: 0; z-index: -1; opacity: 0; pointer-events: none; width: 1382px; height: 1026px; padding: 14px; box-sizing: border-box; overflow: hidden; background: var(--color-bg-page, #17130f); color: var(--color-text-primary, #f7f1e7); font-family: system-ui, sans-serif; }
+.gif-export-game-header { height: 70px; margin-bottom: 12px; padding: 0 18px; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 13px; box-sizing: border-box; border: 1px solid var(--color-border-medium); border-radius: 9px; background: linear-gradient(115deg, var(--color-bg-card), var(--color-bg-panel)); box-shadow: var(--shadow-md), inset 0 1px rgba(255, 255, 255, 0.07); }
+.gif-export-brand-mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--color-accent); color: var(--color-bg-page, #17130f); font-size: 24px; font-weight: 800; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1); }
+.gif-export-game-identity { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+.gif-export-game-identity strong { color: var(--color-heading); font-family: Georgia, 'Times New Roman', serif; font-size: 23px; letter-spacing: 0.025em; }
+.gif-export-game-identity span { overflow: hidden; color: var(--color-text-secondary); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.gif-export-game-meta { display: flex; align-items: center; gap: 14px; color: var(--color-text-secondary); font-size: 13px; }
+.gif-export-game-meta b { padding: 4px 8px; border: 1px solid var(--color-border-light); border-radius: 999px; color: var(--color-accent); background: var(--color-bg-page); font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.gif-export-main { display: flex; gap: 10px; align-items: flex-start; width: 100%; height: 914px; }
+.gif-export-stage .compact-clock-area { margin-top: 25px; }

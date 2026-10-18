@@ -28,7 +28,7 @@ export class TauriEngineAdapter implements EngineAdapter {
   private engineName: string;
   private unlistenFunctions: UnlistenFn[] = [];
   private initialized: boolean = false;
-  private searchDepth: number = 5;
+  public searchDepth: number = 5;
 
   constructor(sessionId: string, enginePath: string, engineName: string = 'Engine') {
     this.sessionId = sessionId;

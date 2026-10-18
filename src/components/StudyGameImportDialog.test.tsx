@@ -1,0 +1,21 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { expect, it, vi } from 'vitest';
+import { InitialPositionSFEN } from 'tsshogi';
+import { StudyGameImportDialog } from './StudyGameImportDialog';
+import { saveVariation, emptyStudy } from '../utils/variationTree';
+import { studyGameBranch } from '../utils/studyGame';
+it('offers a backup and requires explicit replacement; Cancel leaves the game alone', () => {
+  const study = saveVariation(emptyStudy(), InitialPositionSFEN.STANDARD, ['7g7f'], 'Test');
+  const load = vi.fn(), cancel = vi.fn();
+  const currentGame = { position: InitialPositionSFEN.STANDARD, moves: ['2g2f'], metadata: {} };
+  const view = render(<StudyGameImportDialog branch={studyGameBranch(study, study.selectedId!)} currentGame={currentGame} busy={false} error="" onLoad={load} onCancel={cancel} />);
+  const backup = screen.getByRole('link', { name: 'Download current game backup' });
+  expect(JSON.parse(decodeURIComponent(backup.getAttribute('href')!.split(',')[1]))).toEqual(currentGame);
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(cancel).toHaveBeenCalledOnce(); expect(load).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Replace game with this branch' }));
+  expect(load).toHaveBeenCalledOnce();
+  view.rerender(<StudyGameImportDialog branch={studyGameBranch(study, study.selectedId!)} currentGame={currentGame} busy error="" onLoad={load} onCancel={cancel} />);
+  expect(screen.getByRole('button', { name: 'Loading branch…' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+});

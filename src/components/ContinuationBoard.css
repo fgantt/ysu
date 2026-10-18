@@ -1,0 +1,5 @@
+.continuation-move-list { max-height: 160px; overflow: auto; margin: 8px 0 12px; }
+.continuation-move-list ol { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; padding: 0; margin: 5px 0; }
+.continuation-move-list button { padding: 4px 7px; border: 1px solid var(--color-border-light); border-radius: 4px; background: var(--color-bg-panel); color: var(--color-text-primary); font-family: ui-monospace, monospace; cursor: pointer; }
+.continuation-move-list button[aria-current="step"] { border-color: var(--color-accent); font-weight: bold; outline: 1px solid var(--color-accent); }
+.continuation-move-list button:disabled { opacity: .5; cursor: default; }

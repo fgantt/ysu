@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import SvgPiece from './SvgPiece';
 import { PieceType } from 'tsshogi';
-import { KANJI_MAP, ENGLISH_MAP } from '../utils/pieceMaps';
 import './PracticeExerciseDetail.css';
 
 const PracticeExerciseDetail: React.FC = () => {
@@ -302,56 +301,41 @@ const PracticeExerciseDetail: React.FC = () => {
     const center = Math.floor(gridSize / 2);
     
     let movement: number[][] = [];
-    let pieceType: PieceType = 'pawn';
-    let promoted = false;
     
     // Define movement patterns for each diagram type
     switch (diagramType) {
       case 'pawn':
         movement = [[-1, 0]];
-        pieceType = 'pawn';
         break;
       case 'knight':
         movement = [[-2, -1], [-2, 1]];
-        pieceType = 'knight';
         break;
       case 'lance':
         movement = [[-1, 0], [-2, 0], [-3, 0], [-4, 0]];
-        pieceType = 'lance';
         break;
       case 'silver':
         movement = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]];
-        pieceType = 'silver';
         break;
       case 'gold':
         movement = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
-        pieceType = 'gold';
         break;
       case 'bishop':
         movement = [[-1, -1], [-2, -2], [-3, -3], [-4, -4], [-1, 1], [-2, 2], [-3, 3], [-4, 4], [1, -1], [2, -2], [3, -3], [4, -4], [1, 1], [2, 2], [3, 3], [4, 4]];
-        pieceType = 'bishop';
         break;
       case 'rook':
         movement = [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [0, -1], [0, -2], [0, -3], [0, -4], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [2, 0], [3, 0], [4, 0]];
-        pieceType = 'rook';
         break;
       case 'king':
         movement = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
-        pieceType = 'king';
         break;
       case 'promotedRook':
         movement = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1], [-2, 0], [-3, 0], [-4, 0], [0, -2], [0, -3], [0, -4], [0, 2], [0, 3], [0, 4], [2, 0], [3, 0], [4, 0]];
-        pieceType = 'rook';
-        promoted = true;
         break;
       case 'promotedBishop':
         movement = [[-1, -1], [-2, -2], [-3, -3], [-4, -4], [-1, 1], [-2, 2], [-3, 3], [-4, 4], [1, -1], [2, -2], [3, -3], [4, -4], [1, 1], [2, 2], [3, 3], [4, 4], [-1, 0], [0, -1], [0, 1], [1, 0]];
-        pieceType = 'bishop';
-        promoted = true;
         break;
       default:
         movement = [[-1, 0]];
-        pieceType = 'pawn';
     }
     
     return (
@@ -422,7 +406,7 @@ const PracticeExerciseDetail: React.FC = () => {
     if (exerciseId === 'name-identification') {
       // Generate 10 random questions from all pieces
       const selectedPieces = shuffleAndSelect(allPieces, 10);
-      const generatedQuestions = selectedPieces.map((piece, index) => ({
+      const generatedQuestions = selectedPieces.map((piece) => ({
         piece: { type: piece.type, player: piece.player, promoted: piece.promoted },
         question: 'What piece is this?',
         options: shuffleAndSelect(piece.options, 4).map(option => ({ text: option, diagram: null })), // Convert to new structure

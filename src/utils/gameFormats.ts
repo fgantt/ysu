@@ -1,3 +1,5 @@
+import { importCSA, Move } from 'tsshogi';
+
 /**
  * Game Format Utilities for Shogi
  * 
@@ -33,6 +35,17 @@ export interface GameData {
   position: string; // SFEN
   moves: string[]; // Move history in USI format
   metadata: GameMetadata;
+  appearance?: {
+    boardBackground: string;
+    pieceThemeType: string;
+    notation?: 'western' | 'kifu' | 'usi' | 'csa';
+  };
+  clockSnapshots?: Array<{
+    blackTime: number;
+    whiteTime: number;
+    isByoyomiBlack?: boolean;
+    isByoyomiWhite?: boolean;
+  }>;
 }
 
 export interface ParsedGame {
@@ -55,14 +68,6 @@ function usiToCsaPiece(piece: string): string {
 /**
  * Convert piece type from CSA to USI format
  */
-function csaToUsiPiece(piece: string): string {
-  const pieceMap: { [key: string]: string } = {
-    'FU': 'P', 'KY': 'L', 'KE': 'N', 'GI': 'S', 'KI': 'G', 'KA': 'B', 'HI': 'R', 'OU': 'K',
-    'TO': '+P', 'NY': '+L', 'NK': '+N', 'NG': '+S', 'UM': '+B', 'RY': '+R'
-  };
-  return pieceMap[piece] || piece;
-}
-
 /**
  * Convert USI coordinates to CSA format
  */
@@ -107,71 +112,6 @@ function usiToCsaMove(usiMove: string): string {
 /**
  * Convert CSA move to USI format
  */
-function csaToUsiMove(csaMove: string): string {
-  // Handle resignation
-  if (csaMove === 'TORYO') {
-    return 'resign';
-  }
-  
-  if (csaMove.includes('*')) {
-    // Drop move like "B*56"
-    const match = csaMove.match(/^([A-Z]+)\*(\d{2})$/);
-    if (match) {
-      const piece = csaToUsiPiece(match[1]);
-      const destination = match[2];
-      // Convert numeric coordinates to USI format (numeric files, letter ranks)
-      const file = parseInt(destination[0]);
-      const rank = parseInt(destination[1]);
-      const rankChar = String.fromCharCode(97 + rank - 1);
-      return `${piece}*${file}${rankChar}`;
-    }
-  } else {
-    // Normal move like "2726FU" or "2277UM", or drop move like "0056KA"
-    const match = csaMove.match(/^(\d{4})([A-Z]+)$/);
-    if (match) {
-      const coordinates = match[1]; // "2726" or "0056"
-      const piece = match[2]; // "FU", "UM", etc.
-      
-      // Check if this is a drop move (from coordinates are "00")
-      if (coordinates.substring(0, 2) === '00') {
-        // This is a drop move like "0056KA"
-        const toFile = parseInt(coordinates[2]);
-        const toRank = parseInt(coordinates[3]);
-        const rankChar = String.fromCharCode(97 + toRank - 1);
-        const pieceChar = csaToUsiPiece(piece);
-        return `${pieceChar}*${toFile}${rankChar}`;
-      } else {
-        // Normal move
-        // Convert numeric coordinates to USI format (numeric files, letter ranks)
-        const fromFile = parseInt(coordinates[0]);
-        const fromRank = parseInt(coordinates[1]);
-        const toFile = parseInt(coordinates[2]);
-        const toRank = parseInt(coordinates[3]);
-        
-        const fromRankChar = String.fromCharCode(97 + fromRank - 1); // 1->a, 2->b, ..., 9->i
-        const toRankChar = String.fromCharCode(97 + toRank - 1);
-        
-        // Check if this is a promotion move
-        // For black pieces: ranks 1-3 are promotion zone
-        // For white pieces: ranks 7-9 are promotion zone
-        
-        // Determine if this is a promotion move:
-        // - Moving FROM outside promotion zone (ranks 4+) TO promotion zone (ranks 1-3)
-        // - AND the piece type indicates promotion (TO, NY, NK, NG, UM, RY)
-        const isMovingIntoPromotionZone = fromRank >= 4 && toRank >= 1 && toRank <= 3;
-        const isPromotionPiece = piece === 'TO' || piece === 'NY' || piece === 'NK' || piece === 'NG' || piece === 'UM' || piece === 'RY';
-        
-        // Only add + if it's a piece moving INTO the promotion zone and becoming promoted
-        const promotion = isPromotionPiece && isMovingIntoPromotionZone ? '+' : '';
-        
-        return `${fromFile}${fromRankChar}${toFile}${toRankChar}${promotion}`;
-      }
-    }
-  }
-  
-  return csaMove;
-}
-
 /**
  * Convert KIF move to USI format
  */
@@ -457,54 +397,22 @@ export function generateJSON(gameData: GameData): string {
  */
 export function parseCSA(csaText: string): ParsedGame {
   try {
-    const lines = csaText.trim().split('\n');
+    const record = importCSA(csaText);
+    if (record instanceof Error) throw record;
     const metadata: GameMetadata = {};
-    const moves: string[] = [];
-    let position = '';
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      
-      if (trimmed.startsWith('V')) {
-        // Version - skip
-        continue;
-      } else if (trimmed.startsWith('N+')) {
-        metadata.player1Name = trimmed.substring(2);
-      } else if (trimmed.startsWith('N-')) {
-        metadata.player2Name = trimmed.substring(2);
-      } else if (trimmed.startsWith('$START_TIME:')) {
-        metadata.date = trimmed.substring(12);
-      } else if (trimmed.match(/^P\d+/) || trimmed === '+' || trimmed === '-') {
-        // Board position or starting player - simplified handling
-        continue;
-      } else if (trimmed.startsWith('%')) {
-        // Special command like %TORYO (resignation)
-        if (trimmed === '%TORYO') {
-          moves.push('resign');
-        }
-      } else if (trimmed.match(/^[+-].+/) && !trimmed.startsWith('$')) {
-        // Move - CSA format is like +2726FU, -8384FU, etc.
-        const usiMove = csaToUsiMove(trimmed.substring(1));
-        moves.push(usiMove);
-      }
+    for (const line of csaText.split('\n').map(line => line.trim())) {
+      if (line.startsWith('N+')) metadata.player1Name = line.slice(2);
+      else if (line.startsWith('N-')) metadata.player2Name = line.slice(2);
+      else if (line.startsWith('$START_TIME:')) metadata.date = line.slice(12);
+      else if (line.startsWith('$EVENT:')) metadata.gameType = line.slice(7);
+      else if (line.startsWith('$SITE:')) metadata.location = line.slice(6);
+      else if (line.startsWith('$OPENING:')) metadata.opening = line.slice(9);
     }
-    
-    // Generate SFEN from moves (simplified - would need proper board reconstruction)
-    position = 'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1';
-    
-    return {
-      success: true,
-      data: {
-        position,
-        moves,
-        metadata
-      }
-    };
+    const moves = record.moves.flatMap(node => node.move instanceof Move ? [node.move.usi] : []);
+    if (csaText.split('\n').some(line => line.trim() === '%TORYO')) moves.push('resign');
+    return { success: true, data: { position: record.initialPosition.sfen, moves, metadata } };
   } catch (error) {
-    return {
-      success: false,
-      error: `Failed to parse CSA format: ${error}`
-    };
+    return { success: false, error: `Failed to parse CSA format: ${error}` };
   }
 }
 
@@ -533,8 +441,12 @@ export function parseKIF(kifText: string): ParsedGame {
         metadata.player1Name = trimmed.substring(3);
       } else if (trimmed.startsWith('後手：')) {
         metadata.player2Name = trimmed.substring(3);
+      } else if (trimmed.startsWith('棋戦：')) {
+        metadata.gameType = trimmed.substring(3);
+      } else if (trimmed.startsWith('場所：')) {
+        metadata.location = trimmed.substring(3);
       } else if (trimmed.startsWith('戦型：')) {
-        // Opening type - could be stored in comments if needed
+        metadata.opening = trimmed.substring(3)
       } else if (trimmed.startsWith('手合割：')) {
         // Game type - usually "平手" (even game)
       } else if (trimmed.startsWith('手数')) {
@@ -660,7 +572,9 @@ export function parseJSON(jsonText: string): ParsedGame {
       data: {
         position: data.position || '',
         moves: data.moves || [],
-        metadata: data.metadata || {}
+        metadata: data.metadata || {},
+        appearance: data.appearance,
+        clockSnapshots: data.clockSnapshots,
       }
     };
   } catch (error) {

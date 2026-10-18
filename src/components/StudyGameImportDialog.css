@@ -1,0 +1,12 @@
+.study-game-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.study-game-dialog { background: var(--color-bg-panel); color: var(--color-text-primary); border: 1px solid var(--color-border-medium); border-radius: 14px; padding: 24px; max-width: 650px; width: 100%; max-height: 85vh; overflow: auto; box-shadow: 0 16px 60px rgba(0,0,0,.4); }
+.study-game-dialog h2 { margin-top: 0; }
+.study-game-dialog p { line-height: 1.5; color: var(--color-text-secondary); }
+.study-game-dialog a { color: var(--color-link); }
+.study-game-dialog code { overflow-wrap: anywhere; font-size: .85rem; }
+.study-game-moves { max-height: 180px; overflow: auto; line-height: 1.7; }
+.study-game-moves code { margin-left: 8px; color: var(--color-text-secondary); }
+.study-game-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.study-game-actions button { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--color-border-medium); background: var(--color-button-secondary); color: var(--color-button-secondary-text); cursor: pointer; }
+.study-game-actions button:last-child { background: var(--color-button-primary); color: var(--color-button-primary-text); }
+.study-game-actions button:disabled { opacity: .6; cursor: default; }

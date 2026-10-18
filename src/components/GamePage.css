@@ -800,3 +800,5 @@
   height: 80px;
   filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.28));
 }
+
+.compact-menu-toggle kbd { margin-left: auto; font: inherit; font-size: .8em; opacity: .75; white-space: nowrap; }

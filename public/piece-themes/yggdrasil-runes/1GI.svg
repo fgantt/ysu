@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 76">
+<title>Silver — Yggdrasil Runes</title>
+<defs>
+<linearGradient id="oak" x1="0" y1="0" x2="1" y2=".7"><stop stop-color="#b28450"/><stop offset=".24" stop-color="#9a6c3d"/><stop offset=".65" stop-color="#79502d"/><stop offset="1" stop-color="#59371e"/></linearGradient>
+<clipPath id="face"><path d="M35 3L59 14L63 68Q35 73 7 68L11 14Z"/></clipPath>
+<pattern id="grain" width="28" height="90" patternUnits="userSpaceOnUse"><g fill="none" stroke="#422a18" stroke-width=".6" opacity=".28"><path d="M2 -10Q11 15 5 42T4 100M10 -10Q19 24 12 46T14 100M21 -10Q15 24 23 55T22 100"/><path d="M8 0Q18 30 9 60M20 25Q12 45 21 78" stroke="#ead0a0" opacity=".6"/></g></pattern>
+</defs>
+<g data-piece-width-mm="26.7" data-piece-height-mm="30" transform="translate(35 38) scale(0.93031359 0.93750000) translate(-35 -38)"><g transform="rotate(180 35 38)">
+<path d="M35 4L60 15L65 70Q35 76 5 70L10 15Z" fill="#342113"/>
+<path d="M35 3L59 14L63 68Q35 73 7 68L11 14Z" fill="url(#oak)" stroke="#4e311b" stroke-width="1.2"/>
+<path d="M35 3L59 14L63 68Q35 73 7 68L11 14Z" fill="url(#grain)" clip-path="url(#face)"/>
+<path d="M35 6L57 16L60 66Q35 70 10 66L14 16Z" fill="none" stroke="#d3aa70" stroke-width=".7" opacity=".7"/>
+<g id="rune" transform="translate(35 38) scale(1.38 1.42) translate(-35 -35)" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M46 24L25 33L45 40L24 49" stroke="#3b2415" stroke-width="3.8"/>
+<path d="M46 24L25 33L45 40L24 49" stroke="#fff0cb" stroke-width="2.4"/>
+</g></g></g></svg>

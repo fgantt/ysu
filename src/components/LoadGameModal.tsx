@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './LoadGameModal.css';
 import { GameFormat, parseGame, detectFormat, GameData, testKifParsing } from '../utils/gameFormats';
+import GameGifExportDialog from './GameGifExportDialog';
 
 interface LoadGameModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface LoadGameModalProps {
   onLoadFromText: (gameData: GameData) => void;
   onDelete: (name: string) => void;
   savedGames: { [key: string]: string };
+  savedReplayMetadata: { [key: string]: Pick<GameData, 'appearance' | 'clockSnapshots'> };
+  fallbackAppearance: NonNullable<GameData['appearance']>;
 }
 
 const LoadGameModal: React.FC<LoadGameModalProps> = ({ 
@@ -17,13 +20,37 @@ const LoadGameModal: React.FC<LoadGameModalProps> = ({
   onLoad, 
   onLoadFromText, 
   onDelete, 
-  savedGames 
+  savedGames,
+  savedReplayMetadata,
+  fallbackAppearance,
 }) => {
   const [activeTab, setActiveTab] = useState<'storage' | 'import'>('storage');
   const [importText, setImportText] = useState('');
   const [importFormat, setImportFormat] = useState<GameFormat>('sfen');
   const [autoDetect, setAutoDetect] = useState(true);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [gifExport, setGifExport] = useState<{ name: string; data: GameData } | null>(null);
+
+  const handleGifExport = (name: string) => {
+    const text = savedGames[name];
+    const format = detectFormat(text);
+    if (!format) {
+      setParseError('This saved game format could not be read for GIF export.');
+      return;
+    }
+    const parsed = parseGame(text, format);
+    if (!parsed.success || !parsed.data) {
+      setParseError(parsed.error || 'This game could not be prepared for GIF export.');
+      return;
+    }
+    const replayMetadata = savedReplayMetadata[name];
+    if (replayMetadata) {
+      parsed.data.appearance ??= replayMetadata.appearance;
+      parsed.data.clockSnapshots ??= replayMetadata.clockSnapshots;
+    }
+    setParseError(null);
+    setGifExport({ name, data: parsed.data });
+  };
 
   const handleImport = () => {
     if (!importText.trim()) {
@@ -115,6 +142,7 @@ const LoadGameModal: React.FC<LoadGameModalProps> = ({
                       <span>{name}</span>
                       <div className="buttons">
                         <button onClick={() => onLoad(name, 'sfen')}>Load</button>
+                        <button onClick={() => handleGifExport(name)} title="Create an animated replay">GIF</button>
                         <button onClick={() => onDelete(name)}>Delete</button>
                       </div>
                     </li>
@@ -205,6 +233,12 @@ const LoadGameModal: React.FC<LoadGameModalProps> = ({
           )}
         </div>
       </div>
+      {gifExport && <GameGifExportDialog
+        gameName={gifExport.name}
+        gameData={gifExport.data}
+        fallbackAppearance={fallbackAppearance}
+        onClose={() => setGifExport(null)}
+      />}
     </div>
   );
 };

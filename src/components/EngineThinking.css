@@ -1,0 +1,51 @@
+.thinking-history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.thinking-details .thinking-history-controls button[aria-pressed="true"] {
+  background: var(--color-button-primary);
+  color: var(--color-button-primary-text);
+}
+.thinking-history-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.thinking-history-select select {
+  width: 100%;
+  min-width: 0;
+  background: var(--color-select-bg);
+  color: var(--color-select-text);
+  border: 1px solid var(--color-select-border);
+  padding: 8px;
+}
+.thinking-position code,
+.thinking-history-line p {
+  overflow-wrap: anywhere;
+}
+.thinking-history-line {
+  border-top: 1px solid var(--color-border-light);
+  padding: 8px 0;
+}
+
+.thinking-details button {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border-medium);
+  border-radius: 5px;
+  background: var(--color-button-secondary);
+  color: var(--color-button-secondary-text);
+  cursor: pointer;
+}
+.thinking-details button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+.thinking-details button:focus-visible {
+  outline: 2px solid var(--color-input-focus);
+  outline-offset: 2px;
+}
+.thinking-details button:disabled {
+  opacity: .5;
+  cursor: default;
+}

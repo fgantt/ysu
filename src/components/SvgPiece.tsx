@@ -73,7 +73,7 @@ const SvgPiece: React.FC<SvgPieceProps> = ({ type, player, pieceThemeType, size 
 
   // Handle text-based themes (kanji/english)
   const isPromoted = pieceType && (pieceType.includes('prom') || pieceType === 'horse' || pieceType === 'dragon');
-  const label = themeType === "kanji" ? KANJI_MAP[pieceType] : ENGLISH_MAP[pieceType];
+  const label = themeType === "kanji" ? KANJI_MAP[pieceType as keyof typeof KANJI_MAP] : ENGLISH_MAP[pieceType as keyof typeof ENGLISH_MAP];
 
   const piecePath = PIECE_PATHS[pieceType];
 

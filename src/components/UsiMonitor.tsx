@@ -1,3 +1,5 @@
+import AnalysisInstructions from './AnalysisInstructions';
+import { SecondaryWindowControls } from './SecondaryWindowControls';
 import React, { useState, useEffect, useRef } from 'react';
 import './UsiMonitor.css';
 
@@ -49,15 +51,7 @@ const UsiMonitor: React.FC<UsiMonitorProps> = ({
     }
   }, [filteredHistory]);
 
-  if (!isVisible) {
-    return (
-      <div className="usi-monitor-toggle">
-        <button onClick={onToggle} className="toggle-button">
-          USI Monitor
-        </button>
-      </div>
-    );
-  }
+  if (!isVisible) return null;
 
   return (
     <div className="usi-monitor">
@@ -72,12 +66,10 @@ const UsiMonitor: React.FC<UsiMonitorProps> = ({
             ))}
           </select>
         </div>
-        <button onClick={onToggle} className="close-button">
-          ×
-        </button>
+        <SecondaryWindowControls title="USI Monitor" onHide={onToggle} />
       </div>
       
-      <div className="usi-monitor-content">
+      <div className="usi-monitor-content"><AnalysisInstructions guide="history" />
         <div className="last-commands">
           <div className="last-command-item">
             <label>Last Sent:</label>
